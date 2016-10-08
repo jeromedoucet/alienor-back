@@ -1,4 +1,4 @@
-package endpoint
+package component
 
 import "net/http"
 

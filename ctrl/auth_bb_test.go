@@ -8,21 +8,24 @@ import (
 	"net/http/httptest"
 	"github.com/garyburd/redigo/redis"
 	"golang.org/x/crypto/bcrypt"
-	"github.com/jeromedoucet/alienor-back/model/team"
 	"github.com/stretchr/testify/assert"
 	"bytes"
 	"crypto/tls"
 	"io"
+	"github.com/jeromedoucet/alienor-back/model"
+	"github.com/dgrijalva/jwt-go"
 )
 
 var rAddr string = "192.168.99.100:6379";
+
+var secret string = "someSecret"
 
 func TestHandleAuthSuccess(t *testing.T) {
 	// given
 	pwd := "wipe"
 	login := "leroy.jenkins"
 	hPwd, _ := bcrypt.GenerateFromPassword([]byte(pwd), bcrypt.DefaultCost);
-	usr := team.User{Identifier:login, Password:hPwd}
+	usr := model.User{Identifier:login, Password:hPwd, Roles:[]model.Role{model.TRANSLATOR}}
 
 	c, _ := redis.Dial("tcp", rAddr)
 	defer c.Close()
@@ -39,7 +42,16 @@ func TestHandleAuthSuccess(t *testing.T) {
 	// then
 	assert.Nil(t, err)
 	assert.Equal(t, 200, res.StatusCode)
-	// todo check jwt
+	// check jwt token
+	dec := json.NewDecoder(res.Body)
+	var authRes ctrl.AuthRes
+	dec.Decode(&authRes)
+	_, jwtError := jwt.Parse(authRes.Token, func(token *jwt.Token) (interface{}, error) {
+		_, ok := token.Method.(*jwt.SigningMethodHMAC);
+		assert.Equal(t, true, ok)
+		return []byte(secret), nil
+	})
+	assert.Nil(t, jwtError)
 }
 
 func TestHandleRedisConError(t *testing.T) {
@@ -47,7 +59,7 @@ func TestHandleRedisConError(t *testing.T) {
 	pwd := "wipe"
 	login := "leroy.jenkins"
 	hPwd, _ := bcrypt.GenerateFromPassword([]byte(pwd), bcrypt.DefaultCost);
-	usr := team.User{Identifier:login, Password:hPwd}
+	usr := model.User{Identifier:login, Password:hPwd}
 
 	c, _ := redis.Dial("tcp", rAddr)
 	defer c.Close()
@@ -71,7 +83,7 @@ func TestHandleBadPassword(t *testing.T) {
 	pwd := "wipe"
 	login := "leroy.jenkins"
 	hPwd, _ := bcrypt.GenerateFromPassword([]byte(pwd), bcrypt.DefaultCost);
-	usr := team.User{Identifier:login, Password:hPwd}
+	usr := model.User{Identifier:login, Password:hPwd}
 
 	c, _ := redis.Dial("tcp", rAddr)
 	defer c.Close()
@@ -95,7 +107,7 @@ func TestHandleUnknownUser(t *testing.T) {
 	pwd := "lichking"
 	login := "arthas.menethil"
 	hPwd, _ := bcrypt.GenerateFromPassword([]byte(pwd), bcrypt.DefaultCost);
-	usr := team.User{Identifier:login, Password:hPwd}
+	usr := model.User{Identifier:login, Password:hPwd}
 
 	c, _ := redis.Dial("tcp", rAddr)
 	defer c.Close()
@@ -116,7 +128,7 @@ func TestHandleUnknownUser(t *testing.T) {
 
 func startHttp(redisUrl string) *httptest.Server {
 	m := http.NewServeMux()
-	ctrl.InitAuth(m, redisUrl)
+	ctrl.InitAuth(m, redisUrl, secret)
 	return httptest.NewTLSServer(m)
 }
 

@@ -1,4 +1,4 @@
-package db
+package component
 
 import "github.com/garyburd/redigo/redis"
 

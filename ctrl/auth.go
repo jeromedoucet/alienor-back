@@ -2,26 +2,35 @@ package ctrl
 
 import (
 	"net/http"
-	"github.com/jeromedoucet/alienor-back/component/endpoint"
-	"github.com/jeromedoucet/alienor-back/component/db"
 	"encoding/json"
 	"github.com/garyburd/redigo/redis"
-	"github.com/jeromedoucet/alienor-back/model/team"
 	"golang.org/x/crypto/bcrypt"
+	"github.com/jeromedoucet/alienor-back/component"
+	"github.com/jeromedoucet/alienor-back/model"
+	"fmt"
+	"github.com/dgrijalva/jwt-go"
+	"strings"
+	"errors"
+	"time"
 )
 
-// todo create a package view for req and res struct ?
 type AuthReq struct {
 	Login string `json:"login"`
 	Pwd   string `json:"pwd"`
 }
 
-type authenticator struct {
-	rAdr string
-	conn db.Connector
+type AuthRes struct {
+	Token string `json:"token"`
 }
 
-func (a *authenticator) handle(w http.ResponseWriter, r *http.Request) {
+var (
+	rAdr string
+	conn component.Connector
+	secr []byte
+)
+
+// authentication handler
+func handle(w http.ResponseWriter, r *http.Request) {
 	dec := json.NewDecoder(r.Body)
 	var req AuthReq
 	err := dec.Decode(&req)
@@ -29,7 +38,7 @@ func (a *authenticator) handle(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(400)
 		return
 	}
-	c, cErr := a.conn.Connect("tcp", a.rAdr)
+	c, cErr := conn.Connect("tcp", rAdr)
 	if cErr != nil {
 		w.WriteHeader(503)
 		return
@@ -41,12 +50,21 @@ func (a *authenticator) handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if exist {
-		var user team.User
+		var user model.User
 		bUser, _ := c.Do("GET", req.Login)
 		json.Unmarshal(bUser.([]byte), &user)
 		if bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Pwd)) == nil {
-			// todo use jwt
-			w.WriteHeader(200)
+			token, jwtError := createJwtToken(user)
+			if jwtError != nil {
+				w.WriteHeader(500) //todo try to cover that (if possible)
+				return
+			}
+			res, marshallError := json.Marshal(AuthRes{Token:token})
+			if marshallError != nil {
+				w.WriteHeader(500) //todo try to cover that (if possible)
+				return
+			}
+			w.Write(res)
 		} else {
 			w.WriteHeader(400)
 		}
@@ -54,11 +72,82 @@ func (a *authenticator) handle(w http.ResponseWriter, r *http.Request) {
 	} else {
 		w.WriteHeader(404)
 	}
-
 }
 
-func InitAuth(router endpoint.Router, rAdr string) {
-	auth := authenticator{rAdr:rAdr, conn:db.NewConnector()}
-	router.HandleFunc("/login", auth.handle)
-	// todo return router ?
+// create the token used for the newly created session
+func createJwtToken(usr model.User) (token string, err error) {
+	// todo make the exp variable
+	t := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub": usr.Identifier,
+		"rls" : usr.Roles,
+		"scp" : usr.Scope,
+		"exp": time.Now().Add(20 * time.Minute).Unix(),
+	})
+	token, err = t.SignedString(secr)
+	return
+}
+
+// init the auth component by registering auth enpoint on router
+// setting redis addr and JWT HMAC secret for the run
+func InitAuth(router component.Router, redisAddr string, secret string) {
+	conn = component.NewConnector()
+	rAdr = redisAddr
+	secr = []byte(secret)
+	router.HandleFunc(AuthEndpoint, handle)
+}
+
+// this func will check the JWT token. If valid, a user is return
+// an error otherwise.
+func CheckToken(r *http.Request) (usr model.User, err error) {
+	auth := r.Header.Get("Authorization")
+	if !strings.HasPrefix(auth, "bearer ") {
+		err = errors.New("no valid authorization token")
+		return
+	}
+	token, parsingError := jwt.Parse(string([]byte(auth)[7:]), keyFunc)
+
+	if parsingError != nil {
+		err = parsingError;
+		return
+	}
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		usr.Identifier = claims["sub"].(string)
+		if _, scp := claims["scp"]; !scp {
+			err = errors.New("no scp claims")
+			return
+		}
+		if _, rls := claims["rls"]; !rls {
+			err = errors.New("no rls claims")
+			return
+		}
+		usr.Roles = rolesFromClaim(claims)
+		usr.Scope = scopeFromClaim(claims)
+	} else {
+		err = errors.New("invalid token or invalid claim type")
+		return
+	}
+	return
+}
+
+// function which provide the secret
+func keyFunc(token *jwt.Token) (interface{}, error) {
+	if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+		return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+	}
+	return secr, nil
+}
+
+func scopeFromClaim(c jwt.MapClaims) []string {
+	scp := c["scp"].([]interface{})
+	scopes := make([]string, len(scp))
+	for i, r := range scp { scopes[i] = r.(string) }
+	return scopes
+}
+
+func rolesFromClaim(c jwt.MapClaims) []model.Role {
+	rls := c["rls"].([]interface{})
+	roles := make([]model.Role, len(rls))
+	for i, r := range rls { roles[i] = model.Role(r.(string)) }
+	return roles
 }
