@@ -102,6 +102,7 @@ func TestIsLoggedWithBearerPrefix(t *testing.T) {
 /* ################################################################################################################## */
 
 func BenchmarkIsLogged(b *testing.B) {
+	// given
 	secr = []byte("some secret")
 	usr := model.User{Identifier:"leroy.jenkins", Roles:[]model.Role{model.TRANSLATOR}, Scope:[]string{"team 1"}}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
@@ -113,6 +114,7 @@ func BenchmarkIsLogged(b *testing.B) {
 	tokenString, _ := token.SignedString(secr)
 	r := http.Request{Header:http.Header{}}
 	r.Header.Set("Authorization", "bearer " + tokenString)
+	// bench
 	for n := 0; n < b.N; n++ {
 		CheckToken(&r)
 	}

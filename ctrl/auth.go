@@ -24,13 +24,11 @@ type AuthRes struct {
 }
 
 var (
-	rAdr string
-	conn component.Connector
 	secr []byte
 )
 
 // authentication handler
-func handle(w http.ResponseWriter, r *http.Request) {
+func handleAuth(w http.ResponseWriter, r *http.Request) {
 	dec := json.NewDecoder(r.Body)
 	var req AuthReq
 	err := dec.Decode(&req)
@@ -89,11 +87,8 @@ func createJwtToken(usr model.User) (token string, err error) {
 
 // init the auth component by registering auth enpoint on router
 // setting redis addr and JWT HMAC secret for the run
-func InitAuth(router component.Router, redisAddr string, secret string) {
-	conn = component.NewConnector()
-	rAdr = redisAddr
-	secr = []byte(secret)
-	router.HandleFunc(AuthEndpoint, handle)
+func initAuthEndPoint(router component.Router) {
+	router.HandleFunc(AuthEndpoint, handleAuth)
 }
 
 // this func will check the JWT token. If valid, a user is return
@@ -141,13 +136,17 @@ func keyFunc(token *jwt.Token) (interface{}, error) {
 func scopeFromClaim(c jwt.MapClaims) []string {
 	scp := c["scp"].([]interface{})
 	scopes := make([]string, len(scp))
-	for i, r := range scp { scopes[i] = r.(string) }
+	for i, r := range scp {
+		scopes[i] = r.(string)
+	}
 	return scopes
 }
 
 func rolesFromClaim(c jwt.MapClaims) []model.Role {
 	rls := c["rls"].([]interface{})
 	roles := make([]model.Role, len(rls))
-	for i, r := range rls { roles[i] = model.Role(r.(string)) }
+	for i, r := range rls {
+		roles[i] = model.Role(r.(string))
+	}
 	return roles
 }

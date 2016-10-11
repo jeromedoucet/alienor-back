@@ -3,22 +3,15 @@ package ctrl_test
 import (
 	"encoding/json"
 	"testing"
-	"net/http"
 	"github.com/jeromedoucet/alienor-back/ctrl"
-	"net/http/httptest"
 	"github.com/garyburd/redigo/redis"
 	"golang.org/x/crypto/bcrypt"
 	"github.com/stretchr/testify/assert"
 	"bytes"
-	"crypto/tls"
-	"io"
 	"github.com/jeromedoucet/alienor-back/model"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/jeromedoucet/alienor-back/component"
 )
-
-var rAddr string = "192.168.99.100:6379";
-
-var secret string = "someSecret"
 
 func TestHandleAuthSuccess(t *testing.T) {
 	// given
@@ -32,12 +25,12 @@ func TestHandleAuthSuccess(t *testing.T) {
 	defer clean(c)
 	populate(c, map[string]interface{}{usr.Identifier: usr})
 
-	s := startHttp(rAddr)
+	s := startHttp(func(r component.Router) {ctrl.InitEndPoints(r, rAddr, secret)})
 	defer s.Close()
 	body, _ := json.Marshal(ctrl.AuthReq{Login:login, Pwd:pwd})
 
 	// when
-	res, err := doReq(s.URL + "/login", bytes.NewBuffer(body))
+	res, err := doReq(s.URL + "/login", "POST", bytes.NewBuffer(body))
 
 	// then
 	assert.Nil(t, err)
@@ -66,12 +59,12 @@ func TestHandleRedisConError(t *testing.T) {
 	defer clean(c)
 	populate(c, map[string]interface{}{usr.Identifier: usr})
 
-	s := startHttp("192.168.99.100:1234")
+	s := startHttp(func(r component.Router) {ctrl.InitEndPoints(r, "192.168.99.100:1234", secret)})
 	defer s.Close()
 	body, _ := json.Marshal(ctrl.AuthReq{Login:login, Pwd:pwd})
 
 	// when
-	res, err := doReq(s.URL + "/login", bytes.NewBuffer(body))
+	res, err := doReq(s.URL + "/login", "POST", bytes.NewBuffer(body))
 
 	// then
 	assert.Nil(t, err)
@@ -90,12 +83,12 @@ func TestHandleBadPassword(t *testing.T) {
 	defer clean(c)
 	populate(c, map[string]interface{}{usr.Identifier: usr})
 
-	s := startHttp(rAddr)
+	s := startHttp(func(r component.Router) {ctrl.InitEndPoints(r, rAddr, secret)})
 	defer s.Close()
 	body, _ := json.Marshal(ctrl.AuthReq{Login:login, Pwd:"roxx"})
 
 	// when
-	res, err := doReq(s.URL + "/login", bytes.NewBuffer(body))
+	res, err := doReq(s.URL + "/login", "POST", bytes.NewBuffer(body))
 
 	// then
 	assert.Nil(t, err)
@@ -114,22 +107,16 @@ func TestHandleUnknownUser(t *testing.T) {
 	defer clean(c)
 	populate(c, map[string]interface{}{usr.Identifier: usr})
 
-	s := startHttp(rAddr)
+	s := startHttp(func(r component.Router) {ctrl.InitEndPoints(r, rAddr, secret)})
 	defer s.Close()
 	body, _ := json.Marshal(ctrl.AuthReq{Login:"leroy.jenkins", Pwd:"test"})
 
 	// when
-	res, err := doReq(s.URL + "/login", bytes.NewBuffer(body))
+	res, err := doReq(s.URL + "/login", "POST", bytes.NewBuffer(body))
 
 	// then
 	assert.Nil(t, err)
 	assert.Equal(t, 404, res.StatusCode)
-}
-
-func startHttp(redisUrl string) *httptest.Server {
-	m := http.NewServeMux()
-	ctrl.InitAuth(m, redisUrl, secret)
-	return httptest.NewTLSServer(m)
 }
 
 func populate(c redis.Conn, data map[string]interface{}) {
@@ -141,16 +128,4 @@ func populate(c redis.Conn, data map[string]interface{}) {
 	}
 	c.Do("MSET", buf...)
 
-}
-
-func clean(c redis.Conn) {
-	c.Do("FLUSHDB")
-}
-
-func doReq(url string, reader io.Reader) (*http.Response, error) {
-	req, _ := http.NewRequest("POST", url, reader)
-	req.Header.Set("Content-Type", "application/json")
-	// disable TSL cert chain because of httptest autosign cert
-	cli := http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify:true}}}
-	return cli.Do(req)
 }

@@ -9,8 +9,9 @@ import (
 var redisAddr string = "192.168.99.100:6379"
 
 func main() {
+	// todo look at another router + fasthttp
 	m := http.NewServeMux();
-	ctrl.InitAuth(m, redisAddr, "some secret") // todo generate secret
+	ctrl.InitEndPoints(m, redisAddr, "some secret") // todo generate secret
 	err := http.ListenAndServe(":8080", m)
 	if err != nil {
 		log.Fatal(err.Error())
