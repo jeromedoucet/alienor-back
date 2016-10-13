@@ -47,14 +47,85 @@ func TestUserCreationSuccessful(t *testing.T) {
 	assert.Equal(t, usr, userDb)
 }
 
+func TestUserCreationMalFormedJson(t *testing.T) {
+	// given
+	s := startHttp(func(r component.Router) {ctrl.InitEndPoints(r, rAddr, secret)})
+	defer s.Close()
+	body := []byte("a malformed json")
+
+	// when
+	_, err := doReq(s.URL + "/user", "POST", bytes.NewBuffer(body))
+
+	// then
+	assert.Nil(t, err)
+}
+
+func TestUserCreationRedisUnavailable(t *testing.T) {
+	// given
+	usr := model.User{Identifier:"leroy.jenkins",
+		ForName:"Leroy",
+		Name:"Jenkins",
+		Email:"leroy.jenkins@wipe-guild.org",
+		Password:[]byte("wipe"),
+	}
+
+	s := startHttp(func(r component.Router) {ctrl.InitEndPoints(r, "192.168.99.100:12345", secret)})
+	defer s.Close()
+	body, _ := json.Marshal(usr)
+
+	// when
+	res, err := doReq(s.URL + "/user", "POST", bytes.NewBuffer(body))
+
+	// then
+	assert.Nil(t, err)
+	assert.Equal(t, 503, res.StatusCode)
+}
+
 // already used identifier
 func TestUserCreationExistingIdentifier(t *testing.T) {
+	// given
+	usr := model.User{Identifier:"leroy.jenkins",
+		ForName:"Leroy",
+		Name:"Jenkins",
+		Email:"leroy.jenkins@wipe-guild.org",
+		Password:[]byte("wipe"),
+	}
+	c, _ := redis.Dial("tcp", rAddr)
+	defer c.Close()
+	defer clean(c)
+	populate(c, map[string]interface{}{usr.Identifier: model.User{Identifier:usr.Identifier}})
 
+	s := startHttp(func(r component.Router) {ctrl.InitEndPoints(r, rAddr, secret)})
+	defer s.Close()
+	body, _ := json.Marshal(usr)
+
+	// when
+	res, err := doReq(s.URL + "/user", "POST", bytes.NewBuffer(body))
+
+	// then
+	assert.Nil(t, err)
+	assert.Equal(t, 409, res.StatusCode)
 }
 
 // when some mandatory fields are missing missing
-func TestUserCreationMissingMandatoryField(t *testing.T) {
+func TestUserCreationMissingIdentifier(t *testing.T) {
+	// given
+	usr := model.User{ForName:"Leroy",
+		Name:"Jenkins",
+		Email:"leroy.jenkins@wipe-guild.org",
+		Password:[]byte("wipe"),
+	}
 
+	s := startHttp(func(r component.Router) {ctrl.InitEndPoints(r, rAddr, secret)})
+	defer s.Close()
+	body, _ := json.Marshal(usr)
+
+	// when
+	res, err := doReq(s.URL + "/user", "POST", bytes.NewBuffer(body))
+
+	// then
+	assert.Nil(t, err)
+	assert.Equal(t, 400, res.StatusCode)
 }
 
 

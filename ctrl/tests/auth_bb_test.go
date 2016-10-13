@@ -118,14 +118,3 @@ func TestHandleUnknownUser(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 404, res.StatusCode)
 }
-
-func populate(c redis.Conn, data map[string]interface{}) {
-	buf := make([]interface{}, len(data) * 2)
-	for k, v := range data {
-		buf = append(buf, k)
-		val, _ := json.Marshal(v)
-		buf = append(buf, string(val))
-	}
-	c.Do("MSET", buf...)
-
-}

@@ -7,6 +7,7 @@ import (
 	"io"
 	"crypto/tls"
 	"github.com/garyburd/redigo/redis"
+	"encoding/json"
 )
 
 // shared data and config between ctrl bb test
@@ -34,4 +35,14 @@ func doReq(url string, verb string, reader io.Reader) (*http.Response, error) {
 // clean the db
 func clean(c redis.Conn) {
 	c.Do("FLUSHDB")
+}
+
+func populate(c redis.Conn, data map[string]interface{}) {
+	buf := make([]interface{}, len(data) * 2)
+	for k, v := range data {
+		buf = append(buf, k)
+		val, _ := json.Marshal(v)
+		buf = append(buf, string(val))
+	}
+	c.Do("MSET", buf...)
 }
