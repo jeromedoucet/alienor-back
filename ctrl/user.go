@@ -29,7 +29,7 @@ func handleUser(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(503)
 		return
 	}
-	exist, _ := redis.Bool(c.Do("EXISTS", usr.Identifier)) // todo handle error
+	exist, _ := redis.Bool(c.Do("EXISTS", usr.Identifier))
 	if exist {
 		w.WriteHeader(409)
 		return
@@ -42,6 +42,18 @@ func handleUser(w http.ResponseWriter, r *http.Request) {
 func checkField(usr *model.User) error {
 	if usr.Identifier == "" {
 		return errors.New("invalid identifier")
+	}
+	if usr.ForName == "" {
+		return errors.New("invalid forname")
+	}
+	if usr.Name == "" {
+		return errors.New("invalid name")
+	}
+	if usr.Email == "" {
+		return errors.New("invalid email")
+	}
+	if len(usr.Password) < 1 {
+		return errors.New("invalid password")
 	}
 	return nil
 }
