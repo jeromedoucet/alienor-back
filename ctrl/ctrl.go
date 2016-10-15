@@ -1,14 +1,13 @@
 package ctrl
 
-import "github.com/jeromedoucet/alienor-back/component"
-
-var(
-	rAdr string
-	conn component.Connector = component.NewConnector();
+import (
+	"github.com/jeromedoucet/alienor-back/component"
+	"github.com/jeromedoucet/alienor-back/rep"
 )
 
-func InitEndPoints(router component.Router, redisAddr string, secret string) {
-	rAdr = redisAddr
+// register and prepare the endpoints
+func InitEndPoints(router component.Router, couchBaseAddr string, bucketPwd string, secret string) {
+	rep.InitRepo(couchBaseAddr, bucketPwd)
 	secr = []byte(secret)
 	initAuthEndPoint(router)
 	initUserEndPoint(router)

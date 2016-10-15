@@ -5,40 +5,42 @@ import (
 	"net/http"
 	"github.com/jeromedoucet/alienor-back/model"
 	"encoding/json"
-	"github.com/garyburd/redigo/redis"
 	"errors"
+	"github.com/jeromedoucet/alienor-back/rep"
 )
 
 // user handler
 func handleUser(w http.ResponseWriter, r *http.Request) {
+	usr := model.NewUser()
+	var err error
 	dec := json.NewDecoder(r.Body)
-	var usr model.User
-	unmarshalError := dec.Decode(&usr)
+	err = dec.Decode(usr)
 
-	if unmarshalError != nil {
+	if err != nil {
 		w.WriteHeader(400)
 		return
 	}
-	if checkField(&usr) != nil {
+	if checkField(usr) != nil {
 		w.WriteHeader(400)
 		return
 	}
-	c, connError := conn.Connect("tcp", rAdr)
-
-	if connError != nil {
-		w.WriteHeader(503)
-		return
-	}
-	exist, _ := redis.Bool(c.Do("EXISTS", usr.Identifier))
-	if exist {
+	_, err = rep.GetUser(usr.Identifier)
+	// when error, then the key is not found
+	if err == nil {
 		w.WriteHeader(409)
 		return
 	}
+	err = rep.InsertUser(usr)
+	// todo test me
+	if err != nil {
+		w.WriteHeader(500)
+		return
+	}
 	usrToSave, _ := json.Marshal(usr)
-	c.Do("SET", usr.Identifier, string(usrToSave))
 	w.Write(usrToSave)
 }
 
+// check the user fields
 func checkField(usr *model.User) error {
 	if usr.Identifier == "" {
 		return errors.New("invalid identifier")

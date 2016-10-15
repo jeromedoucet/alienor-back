@@ -3,7 +3,6 @@ package ctrl
 import (
 	"net/http"
 	"encoding/json"
-	"github.com/garyburd/redigo/redis"
 	"golang.org/x/crypto/bcrypt"
 	"github.com/jeromedoucet/alienor-back/component"
 	"github.com/jeromedoucet/alienor-back/model"
@@ -12,6 +11,7 @@ import (
 	"strings"
 	"errors"
 	"time"
+	"github.com/jeromedoucet/alienor-back/rep"
 )
 
 type AuthReq struct {
@@ -36,49 +36,33 @@ func handleAuth(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(400)
 		return
 	}
-	c, cErr := conn.Connect("tcp", rAdr)
-	if cErr != nil {
-		w.WriteHeader(503)
-		return
-	}
-	defer c.Close()
-	exist, eErr := redis.Bool(c.Do("EXISTS", req.Login))
+	usr, eErr := rep.GetUser(req.Login)
 	if eErr != nil {
-		w.WriteHeader(503)
+		w.WriteHeader(404)
 		return
 	}
-	if exist {
-		var user model.User
-		bUser, _ := c.Do("GET", req.Login)
-		json.Unmarshal(bUser.([]byte), &user)
-		if bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Pwd)) == nil {
-			token, jwtError := createJwtToken(user)
-			if jwtError != nil {
-				w.WriteHeader(500) //todo try to cover that (if possible)
-				return
-			}
-			res, marshallError := json.Marshal(AuthRes{Token:token})
-			if marshallError != nil {
-				w.WriteHeader(500) //todo try to cover that (if possible)
-				return
-			}
-			w.Write(res)
-		} else {
-			w.WriteHeader(400)
+	if bcrypt.CompareHashAndPassword([]byte(usr.Password), []byte(req.Pwd)) == nil {
+		token, jwtError := createJwtToken(usr)
+		if jwtError != nil {
+			w.WriteHeader(500) //todo try to cover that (if possible)
+			return
 		}
-
+		res, marshallError := json.Marshal(AuthRes{Token:token})
+		if marshallError != nil {
+			w.WriteHeader(500) //todo try to cover that (if possible)
+			return
+		}
+		w.Write(res)
 	} else {
-		w.WriteHeader(404)
+		w.WriteHeader(400)
 	}
 }
 
 // create the token used for the newly created session
-func createJwtToken(usr model.User) (token string, err error) {
+func createJwtToken(usr *model.User) (token string, err error) {
 	// todo make the exp variable
 	t := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub": usr.Identifier,
-		"rls" : usr.Roles,
-		"scp" : usr.Scope,
 		"exp": time.Now().Add(20 * time.Minute).Unix(),
 	})
 	token, err = t.SignedString(secr)
@@ -108,16 +92,6 @@ func CheckToken(r *http.Request) (usr model.User, err error) {
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		usr.Identifier = claims["sub"].(string)
-		if _, scp := claims["scp"]; !scp {
-			err = errors.New("no scp claims")
-			return
-		}
-		if _, rls := claims["rls"]; !rls {
-			err = errors.New("no rls claims")
-			return
-		}
-		usr.Roles = rolesFromClaim(claims)
-		usr.Scope = scopeFromClaim(claims)
 	} else {
 		err = errors.New("invalid token or invalid claim type")
 		return
@@ -131,22 +105,4 @@ func keyFunc(token *jwt.Token) (interface{}, error) {
 		return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 	}
 	return secr, nil
-}
-
-func scopeFromClaim(c jwt.MapClaims) []string {
-	scp := c["scp"].([]interface{})
-	scopes := make([]string, len(scp))
-	for i, r := range scp {
-		scopes[i] = r.(string)
-	}
-	return scopes
-}
-
-func rolesFromClaim(c jwt.MapClaims) []model.Role {
-	rls := c["rls"].([]interface{})
-	roles := make([]model.Role, len(rls))
-	for i, r := range rls {
-		roles[i] = model.Role(r.(string))
-	}
-	return roles
 }

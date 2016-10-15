@@ -1,36 +1,38 @@
 package ctrl_test
 
 import (
-	"encoding/json"
-	"testing"
-	"github.com/jeromedoucet/alienor-back/ctrl"
-	"github.com/garyburd/redigo/redis"
-	"golang.org/x/crypto/bcrypt"
-	"github.com/stretchr/testify/assert"
 	"bytes"
-	"github.com/jeromedoucet/alienor-back/model"
+	"encoding/json"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/jeromedoucet/alienor-back/component"
+	"github.com/jeromedoucet/alienor-back/ctrl"
+	"github.com/jeromedoucet/alienor-back/model"
+	"github.com/stretchr/testify/assert"
+	"golang.org/x/crypto/bcrypt"
+	"testing"
+	"github.com/jeromedoucet/alienor-back/utils"
 )
 
 func TestHandleAuthSuccess(t *testing.T) {
 	// given
+	utils.Before()
+	defer utils.After()
+	utils.Clean([]string{"leroy.jenkins"})
 	pwd := "wipe"
 	login := "leroy.jenkins"
-	hPwd, _ := bcrypt.GenerateFromPassword([]byte(pwd), bcrypt.DefaultCost);
-	usr := model.User{Identifier:login, Password:hPwd, Roles:[]model.Role{model.TRANSLATOR}}
+	hPwd, _ := bcrypt.GenerateFromPassword([]byte(pwd), bcrypt.DefaultCost)
+	usr := model.User{Identifier: login, Type:model.USER, Password: hPwd, }
 
-	c, _ := redis.Dial("tcp", rAddr)
-	defer c.Close()
-	defer clean(c)
-	populate(c, map[string]interface{}{usr.Identifier: usr})
+	utils.Populate(map[string]interface{}{usr.Identifier: usr})
 
-	s := startHttp(func(r component.Router) {ctrl.InitEndPoints(r, rAddr, secret)})
+	s := utils.StartHttp(func(r component.Router) {
+		ctrl.InitEndPoints(r, utils.CouchBaseAddr, "", utils.Secret)
+	})
 	defer s.Close()
-	body, _ := json.Marshal(ctrl.AuthReq{Login:login, Pwd:pwd})
+	body, _ := json.Marshal(ctrl.AuthReq{Login: login, Pwd: pwd})
 
 	// when
-	res, err := doReq(s.URL + "/login", "POST", bytes.NewBuffer(body))
+	res, err := utils.DoReq(s.URL + "/login", "POST", bytes.NewBuffer(body))
 
 	// then
 	assert.Nil(t, err)
@@ -40,55 +42,32 @@ func TestHandleAuthSuccess(t *testing.T) {
 	var authRes ctrl.AuthRes
 	dec.Decode(&authRes)
 	_, jwtError := jwt.Parse(authRes.Token, func(token *jwt.Token) (interface{}, error) {
-		_, ok := token.Method.(*jwt.SigningMethodHMAC);
+		_, ok := token.Method.(*jwt.SigningMethodHMAC)
 		assert.Equal(t, true, ok)
-		return []byte(secret), nil
+		return []byte(utils.Secret), nil
 	})
 	assert.Nil(t, jwtError)
 }
 
-func TestHandleRedisConError(t *testing.T) {
-	// given
-	pwd := "wipe"
-	login := "leroy.jenkins"
-	hPwd, _ := bcrypt.GenerateFromPassword([]byte(pwd), bcrypt.DefaultCost);
-	usr := model.User{Identifier:login, Password:hPwd}
-
-	c, _ := redis.Dial("tcp", rAddr)
-	defer c.Close()
-	defer clean(c)
-	populate(c, map[string]interface{}{usr.Identifier: usr})
-
-	s := startHttp(func(r component.Router) {ctrl.InitEndPoints(r, "192.168.99.100:1234", secret)})
-	defer s.Close()
-	body, _ := json.Marshal(ctrl.AuthReq{Login:login, Pwd:pwd})
-
-	// when
-	res, err := doReq(s.URL + "/login", "POST", bytes.NewBuffer(body))
-
-	// then
-	assert.Nil(t, err)
-	assert.Equal(t, 503, res.StatusCode)
-}
-
 func TestHandleBadPassword(t *testing.T) {
 	// given
+	utils.Before()
+	defer utils.After()
 	pwd := "wipe"
 	login := "leroy.jenkins"
-	hPwd, _ := bcrypt.GenerateFromPassword([]byte(pwd), bcrypt.DefaultCost);
-	usr := model.User{Identifier:login, Password:hPwd}
+	hPwd, _ := bcrypt.GenerateFromPassword([]byte(pwd), bcrypt.DefaultCost)
+	usr := model.User{Identifier: login, Type:model.USER, Password: hPwd}
 
-	c, _ := redis.Dial("tcp", rAddr)
-	defer c.Close()
-	defer clean(c)
-	populate(c, map[string]interface{}{usr.Identifier: usr})
+	utils.Populate(map[string]interface{}{usr.Identifier: usr})
 
-	s := startHttp(func(r component.Router) {ctrl.InitEndPoints(r, rAddr, secret)})
+	s := utils.StartHttp(func(r component.Router) {
+		ctrl.InitEndPoints(r, utils.CouchBaseAddr, "", utils.Secret)
+	})
 	defer s.Close()
-	body, _ := json.Marshal(ctrl.AuthReq{Login:login, Pwd:"roxx"})
+	body, _ := json.Marshal(ctrl.AuthReq{Login: login, Pwd: "roxx"})
 
 	// when
-	res, err := doReq(s.URL + "/login", "POST", bytes.NewBuffer(body))
+	res, err := utils.DoReq(s.URL + "/login", "POST", bytes.NewBuffer(body))
 
 	// then
 	assert.Nil(t, err)
@@ -97,22 +76,18 @@ func TestHandleBadPassword(t *testing.T) {
 
 func TestHandleUnknownUser(t *testing.T) {
 	// given
-	pwd := "lichking"
-	login := "arthas.menethil"
-	hPwd, _ := bcrypt.GenerateFromPassword([]byte(pwd), bcrypt.DefaultCost);
-	usr := model.User{Identifier:login, Password:hPwd}
+	utils.Before()
+	defer utils.After()
+	utils.Clean([]string{"leroy.jenkins"})
 
-	c, _ := redis.Dial("tcp", rAddr)
-	defer c.Close()
-	defer clean(c)
-	populate(c, map[string]interface{}{usr.Identifier: usr})
-
-	s := startHttp(func(r component.Router) {ctrl.InitEndPoints(r, rAddr, secret)})
+	s := utils.StartHttp(func(r component.Router) {
+		ctrl.InitEndPoints(r, utils.CouchBaseAddr, "", utils.Secret)
+	})
 	defer s.Close()
-	body, _ := json.Marshal(ctrl.AuthReq{Login:"leroy.jenkins", Pwd:"test"})
+	body, _ := json.Marshal(ctrl.AuthReq{Login: "leroy.jenkins", Pwd: "test"})
 
 	// when
-	res, err := doReq(s.URL + "/login", "POST", bytes.NewBuffer(body))
+	res, err := utils.DoReq(s.URL + "/login", "POST", bytes.NewBuffer(body))
 
 	// then
 	assert.Nil(t, err)

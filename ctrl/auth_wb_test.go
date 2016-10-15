@@ -12,11 +12,9 @@ import (
 func TestIsLoggedWithSuccess(t *testing.T) {
 	// given
 	secr = []byte("some secret")
-	usr := model.User{Identifier:"leroy.jenkins", Roles:[]model.Role{model.TRANSLATOR}, Scope:[]string{"team 1"}}
+	usr := model.User{Identifier: "leroy.jenkins", Type:model.USER}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub": usr.Identifier,
-		"rls" : usr.Roles,
-		"scp" : usr.Scope,
 		"exp": time.Now().Add(60 * time.Second).Unix(),
 	})
 	tokenString, _ := token.SignedString(secr)
@@ -25,7 +23,7 @@ func TestIsLoggedWithSuccess(t *testing.T) {
 	// when
 	unMarshaledUsr, err := CheckToken(&r)
 	assert.Nil(t, err)
-	assert.Equal(t, usr, unMarshaledUsr)
+	assert.Equal(t, usr.Identifier, unMarshaledUsr.Identifier)
 }
 
 func TestIsLoggedWithoutToken(t *testing.T) {
@@ -48,11 +46,10 @@ func TestIsLoggedWithBadToken(t *testing.T) {
 func TestIsLoggedWithExpiredToken(t *testing.T) {
 	// given
 	secr = []byte("some secret")
-	usr := model.User{Identifier:"leroy.jenkins", Roles:[]model.Role{model.TRANSLATOR}, Scope:[]string{"team 1"}}
+
+	usr := model.User{Identifier: "leroy.jenkins", Type:model.USER}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub": usr.Identifier,
-		"rls" : usr.Roles,
-		"scp" : usr.Scope,
 		"exp": time.Now().Add(-60 * time.Second).Unix(),
 	})
 	tokenString, _ := token.SignedString(secr)
@@ -63,30 +60,12 @@ func TestIsLoggedWithExpiredToken(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
-func TestIsLoggedWithoutRequiredClaims(t *testing.T) {
+func TestIsLoggedWithoutBearerPrefix(t *testing.T) {
 	// given
 	secr = []byte("some secret")
-	usr := model.User{Identifier:"leroy.jenkins", Roles:[]model.Role{model.TRANSLATOR}, Scope:[]string{"team 1"}}
+	usr := model.User{Identifier: "leroy.jenkins", Type:model.USER}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub": usr.Identifier,
-		"exp": time.Now().Add(60 * time.Second).Unix(),
-	})
-	tokenString, _ := token.SignedString(secr)
-	r := http.Request{Header:http.Header{}}
-	r.Header.Set("Authorization", "bearer " + tokenString)
-	// when
-	_, err := CheckToken(&r)
-	assert.NotNil(t, err)
-}
-
-func TestIsLoggedWithBearerPrefix(t *testing.T) {
-	// given
-	secr = []byte("some secret")
-	usr := model.User{Identifier:"leroy.jenkins", Roles:[]model.Role{model.TRANSLATOR}, Scope:[]string{"team 1"}}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": usr.Identifier,
-		"rls" : usr.Roles,
-		"scp" : usr.Scope,
 		"exp": time.Now().Add(60 * time.Second).Unix(),
 	})
 	tokenString, _ := token.SignedString(secr)
@@ -104,11 +83,9 @@ func TestIsLoggedWithBearerPrefix(t *testing.T) {
 func BenchmarkIsLogged(b *testing.B) {
 	// given
 	secr = []byte("some secret")
-	usr := model.User{Identifier:"leroy.jenkins", Roles:[]model.Role{model.TRANSLATOR}, Scope:[]string{"team 1"}}
+	usr := model.User{Identifier: "leroy.jenkins", Type:model.USER}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub": usr.Identifier,
-		"rls" : usr.Roles,
-		"scp" : usr.Scope,
 		"exp": time.Now().Add(60 * time.Second).Unix(),
 	})
 	tokenString, _ := token.SignedString(secr)
