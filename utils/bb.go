@@ -57,7 +57,7 @@ func DoReq(url string, verb string, reader io.Reader) (*http.Response, error) {
 // get one User
 func GetUser(identifier string) (*model.User) {
 	usr := model.NewUser()
-	_, err := Bucket.Get(identifier, usr)
+	_, err := Bucket.Get("user:" + identifier, usr)
 	if err != nil {
 		panic(err)
 	}

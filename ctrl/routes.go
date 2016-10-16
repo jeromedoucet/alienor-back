@@ -1,5 +1,6 @@
 package ctrl
 
-const LoginPage string = "/login"
-const AuthEndpoint string  = "/login"
-const UserEndPoint string = "/user"
+const LOGIN_PAGE string = "/login"
+const AUTH_ENDPOINT string  = "/login"
+const USER_ENDPOINT string = "/user"
+const TEAM_ENDPOINT string = "/team"

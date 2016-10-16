@@ -17,13 +17,13 @@ func TestHandleAuthSuccess(t *testing.T) {
 	// given
 	utils.Before()
 	defer utils.After()
-	utils.Clean([]string{"leroy.jenkins"})
+	utils.Clean([]string{"user:" + "leroy.jenkins"})
 	pwd := "wipe"
 	login := "leroy.jenkins"
 	hPwd, _ := bcrypt.GenerateFromPassword([]byte(pwd), bcrypt.DefaultCost)
 	usr := model.User{Identifier: login, Type:model.USER, Password: hPwd, }
 
-	utils.Populate(map[string]interface{}{usr.Identifier: usr})
+	utils.Populate(map[string]interface{}{"user:" + usr.Identifier: usr})
 
 	s := utils.StartHttp(func(r component.Router) {
 		ctrl.InitEndPoints(r, utils.CouchBaseAddr, "", utils.Secret)
@@ -58,7 +58,7 @@ func TestHandleBadPassword(t *testing.T) {
 	hPwd, _ := bcrypt.GenerateFromPassword([]byte(pwd), bcrypt.DefaultCost)
 	usr := model.User{Identifier: login, Type:model.USER, Password: hPwd}
 
-	utils.Populate(map[string]interface{}{usr.Identifier: usr})
+	utils.Populate(map[string]interface{}{"user:" + usr.Identifier: usr})
 
 	s := utils.StartHttp(func(r component.Router) {
 		ctrl.InitEndPoints(r, utils.CouchBaseAddr, "", utils.Secret)
@@ -78,7 +78,7 @@ func TestHandleUnknownUser(t *testing.T) {
 	// given
 	utils.Before()
 	defer utils.After()
-	utils.Clean([]string{"leroy.jenkins"})
+	utils.Clean([]string{"user:" + "leroy.jenkins"})
 
 	s := utils.StartHttp(func(r component.Router) {
 		ctrl.InitEndPoints(r, utils.CouchBaseAddr, "", utils.Secret)

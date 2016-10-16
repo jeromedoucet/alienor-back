@@ -16,7 +16,7 @@ func TestUserCreationSuccessful(t *testing.T) {
 	// given
 	utils.Before()
 	defer utils.After()
-	utils.Clean([]string{"leroy.jenkins"})
+	utils.Clean([]string{"user:" + "leroy.jenkins"})
 	usr := model.User{Identifier:"leroy.jenkins",
 		Type:model.USER,
 		ForName:"Leroy",
@@ -71,7 +71,7 @@ func TestUserCreationExistingIdentifier(t *testing.T) {
 		Email:"leroy.jenkins@wipe-guild.org",
 		Password:[]byte("wipe"),
 	}
-	utils.Populate(map[string]interface{}{usr.Identifier: model.User{Identifier:usr.Identifier}})
+	utils.Populate(map[string]interface{}{"user:" + usr.Identifier: model.User{Identifier:usr.Identifier}})
 
 	s := utils.StartHttp(func(r component.Router) {ctrl.InitEndPoints(r, utils.CouchBaseAddr, "", utils.Secret)})
 	defer s.Close()

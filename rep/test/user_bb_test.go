@@ -12,7 +12,7 @@ func TestGetUserShouldUserWithSuccess(t *testing.T) {
 	// given
 	utils.Before()
 	defer utils.After()
-	defer utils.Clean([]string{"leroy.jenkins"})
+	defer utils.Clean([]string{"user:" + "leroy.jenkins"})
 	usr := model.User{Identifier:"leroy.jenkins",
 		Type:model.USER,
 		ForName:"Leroy",
@@ -20,7 +20,7 @@ func TestGetUserShouldUserWithSuccess(t *testing.T) {
 		Email:"leroy.jenkins@wipe-guild.org",
 		Password:[]byte("wipe"),
 	}
-	utils.Populate(map[string]interface{}{usr.Identifier: usr})
+	utils.Populate(map[string]interface{}{"user:" + usr.Identifier: usr})
 	rep.InitRepo(utils.CouchBaseAddr, "")
 
 	// when

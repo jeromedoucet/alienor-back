@@ -12,6 +12,7 @@ import (
 	"errors"
 	"time"
 	"github.com/jeromedoucet/alienor-back/rep"
+	"github.com/couchbase/gocb"
 )
 
 type AuthReq struct {
@@ -38,7 +39,11 @@ func handleAuth(w http.ResponseWriter, r *http.Request) {
 	}
 	usr, eErr := rep.GetUser(req.Login)
 	if eErr != nil {
-		w.WriteHeader(404)
+		if eErr == gocb.ErrKeyNotFound {
+			w.WriteHeader(404)
+		} else {
+			w.WriteHeader(503) // todo test me
+		}
 		return
 	}
 	if bcrypt.CompareHashAndPassword([]byte(usr.Password), []byte(req.Pwd)) == nil {
@@ -70,9 +75,8 @@ func createJwtToken(usr *model.User) (token string, err error) {
 }
 
 // init the auth component by registering auth enpoint on router
-// setting redis addr and JWT HMAC secret for the run
 func initAuthEndPoint(router component.Router) {
-	router.HandleFunc(AuthEndpoint, handleAuth)
+	router.HandleFunc(AUTH_ENDPOINT, handleAuth)
 }
 
 // this func will check the JWT token. If valid, a user is return

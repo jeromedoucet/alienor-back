@@ -61,5 +61,5 @@ func checkField(usr *model.User) error {
 }
 
 func initUserEndPoint(router component.Router) {
-	router.HandleFunc(UserEndPoint, handleUser)
+	router.HandleFunc(USER_ENDPOINT, handleUser)
 }
