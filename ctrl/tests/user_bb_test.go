@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"github.com/stretchr/testify/assert"
 	"github.com/jeromedoucet/alienor-back/utils"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // nominal user creation test case
@@ -39,10 +40,17 @@ func TestUserCreationSuccessful(t *testing.T) {
 	// http res check
 	var userRes model.User
 	json.NewDecoder(res.Body).Decode(&userRes)
-	assert.Equal(t, usr, userRes)
-
+	//assert.Equal(t, usr, userRes)
+	assert.Empty(t, userRes.Password)
+	assert.Equal(t, usr.Email, userRes.Email)
+	assert.Equal(t, usr.ForName, userRes.ForName)
+	assert.Equal(t, usr.Name, userRes.Name)
 	// check db
-	assert.Equal(t, usr, *utils.GetUser(usr.Identifier))
+	actualUser := utils.GetUser(usr.Identifier)
+	assert.Equal(t, usr.Email, actualUser.Email)
+	assert.Equal(t, usr.ForName, actualUser.ForName)
+	assert.Equal(t, usr.Name, actualUser.Name)
+	assert.Nil(t, bcrypt.CompareHashAndPassword(actualUser.Password, usr.Password))
 }
 
 func TestUserCreationMalFormedJson(t *testing.T) {

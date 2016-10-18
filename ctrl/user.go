@@ -36,6 +36,7 @@ func handleUser(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(500)
 		return
 	}
+	usr.Password = []byte{} // don't send the password !
 	usrToSave, _ := json.Marshal(usr)
 	w.Write(usrToSave)
 }

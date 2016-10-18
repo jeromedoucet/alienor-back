@@ -24,17 +24,21 @@ func TestGetUserShouldUserWithSuccess(t *testing.T) {
 	rep.InitRepo(utils.CouchBaseAddr, "")
 
 	// when
-	expectedUsr, err := rep.GetUser(usr.Identifier)
+	actualUser, err := rep.GetUser(usr.Identifier)
 
 	// then
 	assert.Nil(t ,err)
-	assert.Equal(t, usr, *expectedUsr)
+	assert.Equal(t, usr.Email, actualUser.Email)
+	assert.Equal(t, usr.ForName, actualUser.ForName)
+	assert.Equal(t, usr.Name, actualUser.Name)
+	assert.Equal(t, string(actualUser.Password), string(usr.Password))
 }
 
 func TestGetUserShouldUserWithError(t *testing.T) {
 	// given
 	utils.Before()
 	defer utils.After()
+	utils.Clean([]string{"user:" + "leroy.jenkins"})
 	rep.InitRepo(utils.CouchBaseAddr, "")
 
 	// when
