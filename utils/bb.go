@@ -8,6 +8,8 @@ import (
 	"crypto/tls"
 	"github.com/couchbase/gocb"
 	"github.com/jeromedoucet/alienor-back/model"
+	"github.com/dgrijalva/jwt-go"
+	"time"
 )
 
 // todo check that this package is not in binary
@@ -47,8 +49,15 @@ func StartHttp(registrator func(component.Router)) *httptest.Server {
 
 // prepare a http request for testing. ca cert check is disable
 func DoReq(url string, verb string, reader io.Reader) (*http.Response, error) {
+	return DoReqWithToken(url, verb, reader, "")
+}
+
+func DoReqWithToken(url string, verb string, reader io.Reader, token string) (*http.Response, error) {
 	req, _ := http.NewRequest(verb, url, reader)
 	req.Header.Set("Content-Type", "application/json")
+	if token != "" {
+		req.Header.Set("Authorization", "bearer " + token)
+	}
 	// disable TSL cert chain because of httptest autosign cert
 	cli := http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify:true}}}
 	return cli.Do(req)
@@ -62,6 +71,19 @@ func GetUser(identifier string) (*model.User) {
 		panic(err)
 	}
 	return usr
+}
+
+func CreateToken(usr *model.User) (token string) {
+	var err error
+	t := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub": usr.Identifier,
+		"exp": time.Now().Add(20 * time.Minute).Unix(),
+	})
+	token, err = t.SignedString([]byte(Secret))
+	if err != nil{
+		 panic(err.Error())
+	}
+	return
 }
 
 // clean the db

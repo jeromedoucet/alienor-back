@@ -13,7 +13,6 @@ const TRANSLATOR RoleVal = "TRANSLATOR";
 
 // a team that is used to attach token
 type Team struct {
-	Identifier string `json:"identifier"`
 	Type DocType `json:"type"`
 	Name string `json:"name"`
 }

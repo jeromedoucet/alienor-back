@@ -13,6 +13,7 @@ func TestGetUserShouldUserWithSuccess(t *testing.T) {
 	utils.Before()
 	defer utils.After()
 	defer utils.Clean([]string{"user:" + "leroy.jenkins"})
+	utils.Clean([]string{"user:" + "leroy.jenkins"})
 	usr := model.User{Identifier:"leroy.jenkins",
 		Type:model.USER,
 		ForName:"Leroy",
@@ -24,10 +25,10 @@ func TestGetUserShouldUserWithSuccess(t *testing.T) {
 	rep.InitRepo(utils.CouchBaseAddr, "")
 
 	// when
-	actualUser, err := rep.GetUser(usr.Identifier)
+	actualUser, cas := rep.GetUser(usr.Identifier)
 
 	// then
-	assert.Nil(t ,err)
+	assert.NotNil(t, cas)
 	assert.Equal(t, usr.Email, actualUser.Email)
 	assert.Equal(t, usr.ForName, actualUser.ForName)
 	assert.Equal(t, usr.Name, actualUser.Name)
@@ -38,12 +39,12 @@ func TestGetUserShouldUserWithError(t *testing.T) {
 	// given
 	utils.Before()
 	defer utils.After()
-	utils.Clean([]string{"user:" + "leroy.jenkins"})
+	defer utils.Clean([]string{"user:" + "leroy.jenkins"})
 	rep.InitRepo(utils.CouchBaseAddr, "")
 
 	// when
-	_, err := rep.GetUser("leroy.jenkins")
+	usr, _ := rep.GetUser("leroy.jenkins")
 
 	// then
-	assert.NotNil(t ,err)
+	assert.Nil(t, usr)
 }

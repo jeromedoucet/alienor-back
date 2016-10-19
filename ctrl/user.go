@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/jeromedoucet/alienor-back/rep"
+	"fmt"
 )
 
 // user handler
@@ -24,21 +25,16 @@ func handleUser(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(400)
 		return
 	}
-	_, err = rep.GetUser(usr.Identifier)
-	// when error, then the key is not found
-	if err == nil {
+	err = rep.InsertUser(usr)
+	if err != nil {
 		w.WriteHeader(409)
 		return
 	}
-	err = rep.InsertUser(usr)
-	// todo test me
-	if err != nil {
-		w.WriteHeader(500)
-		return
-	}
 	usr.Password = []byte{} // don't send the password !
-	usrToSave, _ := json.Marshal(usr)
-	w.Write(usrToSave)
+	usrSaved, _ := json.Marshal(usr)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	fmt.Fprintf(w, "%s", usrSaved)
 }
 
 // check the user fields

@@ -12,7 +12,6 @@ import (
 	"errors"
 	"time"
 	"github.com/jeromedoucet/alienor-back/rep"
-	"github.com/couchbase/gocb"
 )
 
 type AuthReq struct {
@@ -37,13 +36,9 @@ func handleAuth(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(400)
 		return
 	}
-	usr, eErr := rep.GetUser(req.Login)
-	if eErr != nil {
-		if eErr == gocb.ErrKeyNotFound {
-			w.WriteHeader(404)
-		} else {
-			w.WriteHeader(503) // todo test me
-		}
+	usr, _ := rep.GetUser(req.Login)
+	if usr == nil {
+		w.WriteHeader(404)
 		return
 	}
 	if bcrypt.CompareHashAndPassword([]byte(usr.Password), []byte(req.Pwd)) == nil {

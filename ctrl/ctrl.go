@@ -11,4 +11,5 @@ func InitEndPoints(router component.Router, couchBaseAddr string, bucketPwd stri
 	secr = []byte(secret)
 	initAuthEndPoint(router)
 	initUserEndPoint(router)
+	initTeamEndPoint(router)
 }

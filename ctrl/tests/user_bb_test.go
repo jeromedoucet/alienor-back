@@ -35,12 +35,12 @@ func TestUserCreationSuccessful(t *testing.T) {
 
 	// then
 	assert.Nil(t, err)
-	assert.Equal(t, 200, res.StatusCode)
+	assert.Equal(t, 201, res.StatusCode)
+	assert.Equal(t, "application/json", res.Header.Get("Content-Type"))
 
 	// http res check
 	var userRes model.User
 	json.NewDecoder(res.Body).Decode(&userRes)
-	//assert.Equal(t, usr, userRes)
 	assert.Empty(t, userRes.Password)
 	assert.Equal(t, usr.Email, userRes.Email)
 	assert.Equal(t, usr.ForName, userRes.ForName)
