@@ -24,8 +24,7 @@ func handleTeam(w http.ResponseWriter, r *http.Request) {
 	var usr *model.User
 	principal, err := CheckToken(r)
 	if err != nil {
-		// todo test me
-		fmt.Println(err.Error())
+		w.WriteHeader(401)
 		return
 	}
 	dec := json.NewDecoder(r.Body)
@@ -34,9 +33,8 @@ func handleTeam(w http.ResponseWriter, r *http.Request) {
 	// todo check team existance
 	var cas gocb.Cas
 	usr, cas = rep.GetUser(principal.Identifier)
-	if usr == nil {
+	if usr == nil { // todo user nil ?? challenge me !
 		// todo test me
-		fmt.Println(err.Error())
 		return
 	}
 	role := createNewRole(&req)
@@ -47,7 +45,7 @@ func handleTeam(w http.ResponseWriter, r *http.Request) {
 	}
 	err = rep.UpdateUser(usr, cas)
 	if err != nil {
-		// todo handle me
+		// todo test me
 	}
 	newTeam, _ := json.Marshal(role.Team)
 	w.Header().Set("Content-Type", "application/json")

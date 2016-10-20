@@ -12,7 +12,6 @@ import (
 )
 
 func TestTeamCreationSuccessFull(t *testing.T) {
-
 	// given
 	utils.Before()
 	defer utils.After()
@@ -42,5 +41,30 @@ func TestTeamCreationSuccessFull(t *testing.T) {
 	assert.Equal(t, 1, len(actualUsr.Roles))
 	assert.Equal(t, model.ADMIN, actualUsr.Roles[0].Value)
 	assert.Equal(t, teamCreationRequest.Name, actualUsr.Roles[0].Team.Name)
+}
+
+func TestTeamCreationWhenNotAuthenticated(t *testing.T) {
+	// given
+	utils.Before()
+	defer utils.After()
+	defer utils.Clean([]string{"user:leroy.jenkins"})
+	teamCreationRequest := ctrl.TeamCreationReq{Name:"A-Team"}
+	// prepare existing user
+	usr := model.User{Identifier: "leroy.jenkins", Type:model.USER}
+	utils.Populate(map[string]interface{}{"user:" + usr.Identifier: usr})
+
+	s := utils.StartHttp(func(r component.Router) {ctrl.InitEndPoints(r, utils.CouchBaseAddr, "", utils.Secret)})
+	defer s.Close()
+
+	body, _ := json.Marshal(teamCreationRequest)
+
+	res, err := utils.DoReq(s.URL + "/team", "POST", bytes.NewBuffer(body))
+	// then
+	assert.Nil(t, err)
+	assert.Equal(t, 401, res.StatusCode)
+
+	// db check -- the connected user should now be one admin of the
+	actualUsr := utils.GetUser(usr.Identifier)
+	assert.Equal(t, 0, len(actualUsr.Roles))
 }
 
