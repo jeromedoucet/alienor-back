@@ -16,8 +16,7 @@ import (
 func TestHandleAuthSuccess(t *testing.T) {
 	// given
 	utils.Before()
-	defer utils.After()
-	utils.Clean([]string{"user:" + "leroy.jenkins"})
+	defer utils.Clean()
 	pwd := "wipe"
 	login := "leroy.jenkins"
 	hPwd, _ := bcrypt.GenerateFromPassword([]byte(pwd), bcrypt.DefaultCost)
@@ -52,7 +51,7 @@ func TestHandleAuthSuccess(t *testing.T) {
 func TestHandleBadPassword(t *testing.T) {
 	// given
 	utils.Before()
-	defer utils.After()
+	defer utils.Clean()
 	pwd := "wipe"
 	login := "leroy.jenkins"
 	hPwd, _ := bcrypt.GenerateFromPassword([]byte(pwd), bcrypt.DefaultCost)
@@ -77,8 +76,7 @@ func TestHandleBadPassword(t *testing.T) {
 func TestHandleUnknownUser(t *testing.T) {
 	// given
 	utils.Before()
-	defer utils.After()
-	utils.Clean([]string{"user:" + "leroy.jenkins"})
+	defer utils.Clean()
 
 	s := utils.StartHttp(func(r component.Router) {
 		ctrl.InitEndPoints(r, utils.CouchBaseAddr, "", utils.Secret)

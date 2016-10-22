@@ -14,8 +14,7 @@ import (
 func TestTeamCreationSuccessFull(t *testing.T) {
 	// given
 	utils.Before()
-	defer utils.After()
-	defer utils.Clean([]string{"user:leroy.jenkins"})
+	defer utils.Clean()
 	teamCreationRequest := ctrl.TeamCreationReq{Name:"A-Team"}
 	// prepare existing user
 	usr := model.User{Identifier: "leroy.jenkins", Type:model.USER}
@@ -46,8 +45,7 @@ func TestTeamCreationSuccessFull(t *testing.T) {
 func TestTeamCreationWhenNotAuthenticated(t *testing.T) {
 	// given
 	utils.Before()
-	defer utils.After()
-	defer utils.Clean([]string{"user:leroy.jenkins"})
+	defer utils.Clean()
 	teamCreationRequest := ctrl.TeamCreationReq{Name:"A-Team"}
 	// prepare existing user
 	usr := model.User{Identifier: "leroy.jenkins", Type:model.USER}
@@ -68,3 +66,31 @@ func TestTeamCreationWhenNotAuthenticated(t *testing.T) {
 	assert.Equal(t, 0, len(actualUsr.Roles))
 }
 
+// todo bench this test ! => first n1ql query
+// todo check the error message too
+func TestTeamCreationWhenTeamAlreadyExist(t *testing.T) {
+	// given
+	utils.Before()
+	defer utils.Clean()
+	teamCreationRequest := ctrl.TeamCreationReq{Name:"A-Team"}
+	// prepare auth user
+	leroy := model.User{Identifier: "leroy.jenkins", Type:model.USER}
+	// prepare existing user with existing team
+	illidan := utils.PrepareUserWithTeam("A-Team", "illidan.stormrage")
+	utils.Populate(map[string]interface{}{"user:" + leroy.Identifier: leroy, "user:" + illidan.Identifier: illidan})
+
+	s := utils.StartHttp(func(r component.Router) {ctrl.InitEndPoints(r, utils.CouchBaseAddr, "", utils.Secret)})
+	defer s.Close()
+
+	body, _ := json.Marshal(teamCreationRequest)
+
+	token := utils.CreateToken(&leroy)
+	res, err := utils.DoReqWithToken(s.URL + "/team", "POST", bytes.NewBuffer(body), token)
+	// then
+	assert.Nil(t, err)
+	assert.Equal(t, 409, res.StatusCode)
+
+	// db check -- the connected user should now be one admin of the
+	actualUsr := utils.GetUser(leroy.Identifier)
+	assert.Equal(t, 0, len(actualUsr.Roles))
+}

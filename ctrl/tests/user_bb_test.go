@@ -16,8 +16,7 @@ import (
 func TestUserCreationSuccessful(t *testing.T) {
 	// given
 	utils.Before()
-	defer utils.After()
-	utils.Clean([]string{"user:" + "leroy.jenkins"})
+	defer utils.Clean()
 	usr := model.User{Identifier:"leroy.jenkins",
 		Type:model.USER,
 		ForName:"Leroy",
@@ -56,7 +55,7 @@ func TestUserCreationSuccessful(t *testing.T) {
 func TestUserCreationMalFormedJson(t *testing.T) {
 	// given
 	utils.Before()
-	defer utils.After()
+	defer utils.Clean()
 	s := utils.StartHttp(func(r component.Router) {ctrl.InitEndPoints(r, utils.CouchBaseAddr, "", utils.Secret)})
 	defer s.Close()
 	body := []byte("a malformed json")
@@ -72,7 +71,7 @@ func TestUserCreationMalFormedJson(t *testing.T) {
 func TestUserCreationExistingIdentifier(t *testing.T) {
 	// given
 	utils.Before()
-	defer utils.After()
+	defer utils.Clean()
 	usr := model.User{Identifier:"leroy.jenkins",
 		ForName:"Leroy",
 		Name:"Jenkins",
@@ -97,7 +96,7 @@ func TestUserCreationExistingIdentifier(t *testing.T) {
 func TestUserCreationMissingIdentifier(t *testing.T) {
 	// given
 	utils.Before()
-	defer utils.After()
+	defer utils.Clean()
 	usr := model.User{ForName:"Leroy",
 		Name:"Jenkins",
 		Email:"leroy.jenkins@wipe-guild.org",
@@ -120,7 +119,7 @@ func TestUserCreationMissingIdentifier(t *testing.T) {
 func TestUserCreationMissingForName(t *testing.T) {
 	// given
 	utils.Before()
-	defer utils.After()
+	defer utils.Clean()
 	usr := model.User{Identifier:"leroy.jenkins",
 		Name:"Jenkins",
 		Email:"leroy.jenkins@wipe-guild.org",
@@ -143,7 +142,7 @@ func TestUserCreationMissingForName(t *testing.T) {
 func TestUserCreationMissingName(t *testing.T) {
 	// given
 	utils.Before()
-	defer utils.After()
+	defer utils.Clean()
 	usr := model.User{Identifier:"leroy.jenkins",
 		ForName:"Leroy",
 		Email:"leroy.jenkins@wipe-guild.org",
@@ -166,7 +165,7 @@ func TestUserCreationMissingName(t *testing.T) {
 func TestUserCreationMissingEmail(t *testing.T) {
 	// given
 	utils.Before()
-	defer utils.After()
+	defer utils.Clean()
 	usr := model.User{Identifier:"leroy.jenkins",
 		ForName:"Leroy",
 		Name:"Jenkins",
@@ -189,7 +188,7 @@ func TestUserCreationMissingEmail(t *testing.T) {
 func TestUserCreationMissingPassword(t *testing.T) {
 	// given
 	utils.Before()
-	defer utils.After()
+	defer utils.Clean()
 	usr := model.User{Identifier:"leroy.jenkins",
 		ForName:"Leroy",
 		Name:"Jenkins",

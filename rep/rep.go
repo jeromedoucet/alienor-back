@@ -5,6 +5,8 @@ import (
 	"fmt"
 )
 
+const bucketName string = "alienor"
+
 var (
 	bucket *gocb.Bucket
 )
@@ -19,7 +21,7 @@ func InitRepo(couchBaseAddr string, bucketPwd string)  {
 		panic(err)
 	}
 	// open it one time, it's thread-safe
-	bucket, err = cluster.OpenBucket("alienor", bucketPwd)
+	bucket, err = cluster.OpenBucket(bucketName, bucketPwd)
 	if err != nil {
 		fmt.Println("ERRROR OPENING BUCKET:", err) // todo test me
 		panic(err)

@@ -11,9 +11,7 @@ import (
 func TestGetUserShouldUserWithSuccess(t *testing.T) {
 	// given
 	utils.Before()
-	defer utils.After()
-	defer utils.Clean([]string{"user:" + "leroy.jenkins"})
-	utils.Clean([]string{"user:" + "leroy.jenkins"})
+	defer utils.Clean()
 	usr := model.User{Identifier:"leroy.jenkins",
 		Type:model.USER,
 		ForName:"Leroy",
@@ -38,8 +36,7 @@ func TestGetUserShouldUserWithSuccess(t *testing.T) {
 func TestGetUserShouldUserWithError(t *testing.T) {
 	// given
 	utils.Before()
-	defer utils.After()
-	defer utils.Clean([]string{"user:" + "leroy.jenkins"})
+	defer utils.Clean()
 	rep.InitRepo(utils.CouchBaseAddr, "")
 
 	// when

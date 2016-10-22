@@ -33,11 +33,21 @@ func Before() {
 	if err != nil {
 		panic(err)
 	}
+	bManager := Bucket.Manager("alienor", "")
+	err = bManager.CreatePrimaryIndex("aliaIndex", true, false)
+	if err != nil {
+		panic(err)
+	}
+	query := gocb.NewN1qlQuery("DELETE FROM alienor")
+	query.Consistency(gocb.RequestPlus)
+	_, err = Bucket.ExecuteN1qlQuery(query, []interface{}{})
+	if err != nil {
+		panic(err)
+	}
 }
 
-func After() {
+func Clean() {
 	Bucket.Close();
-
 }
 
 // exec registrator and start a tls server
@@ -80,25 +90,27 @@ func CreateToken(usr *model.User) (token string) {
 		"exp": time.Now().Add(20 * time.Minute).Unix(),
 	})
 	token, err = t.SignedString([]byte(Secret))
-	if err != nil{
-		 panic(err.Error())
+	if err != nil {
+		panic(err.Error())
 	}
 	return
 }
 
-// clean the db
-func Clean(keys []string) {
-	var items []gocb.BulkOp
-	for _, k := range keys {
-		items = append(items, &gocb.RemoveOp{Key: k})
-	}
-	doBulkOps(items)
+func PrepareUserWithTeam(teamName string, identifier string) *model.User {
+	team := model.NewTeam()
+	team.Name = teamName
+	role := model.NewRole()
+	role.Team = team
+	user := model.NewUser()
+	user.Identifier = identifier
+	user.Roles = []*model.Role{role}
+	return user
 }
 
 func Populate(data map[string]interface{}) {
 	var items []gocb.BulkOp
 	for k, v := range data {
-		items = append(items, &gocb.InsertOp{Key: k, Value: v})
+		items = append(items, &gocb.UpsertOp{Key: k, Value: v})
 	}
 	doBulkOps(items)
 }

@@ -30,7 +30,13 @@ func handleTeam(w http.ResponseWriter, r *http.Request) {
 	dec := json.NewDecoder(r.Body)
 	var req TeamCreationReq
 	err = dec.Decode(&req)
-	// todo check team existance
+
+	ctrlErr := checkTeamExist(&req)
+	if ctrlErr != nil {
+		writeError(w, ctrlErr)
+		return
+	}
+
 	var cas gocb.Cas
 	usr, cas = rep.GetUser(principal.Identifier)
 	if usr == nil { // todo user nil ?? challenge me !
@@ -51,6 +57,17 @@ func handleTeam(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(201)
 	fmt.Fprintf(w, "%s", newTeam)
+}
+
+func checkTeamExist(req *TeamCreationReq) *ctrlError {
+	exist, err := rep.TeamExist(req.Name, gocb.RequestPlus)
+	if err != nil {
+		return &ctrlError{httpCode:503, errorMsg:"Error during fetching data from the data store"}
+	}
+	if exist {
+		return &ctrlError{httpCode:409, errorMsg:"Error during creating the team : already exist"}
+	}
+	return nil
 }
 
 func createNewRole(req *TeamCreationReq) *model.Role {
