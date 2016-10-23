@@ -7,6 +7,8 @@ import (
 	"github.com/jeromedoucet/alienor-back/model"
 	"testing"
 	"net/http"
+	"bytes"
+	"net/http/httptest"
 )
 
 func TestIsLoggedWithSuccess(t *testing.T) {
@@ -74,6 +76,20 @@ func TestIsLoggedWithoutBearerPrefix(t *testing.T) {
 	// when
 	_, err := CheckToken(&r)
 	assert.NotNil(t, err)
+}
+
+func TestCheckUserCredentialBadRequestBody(t *testing.T) {
+	// given
+	req := httptest.NewRequest("POST", "http://127.0.0.1:8080", bytes.NewBufferString("some string"))
+
+	// when
+	usr, err :=checkUserCredential(req)
+
+	// then
+	assert.Nil(t, usr)
+	assert.NotNil(t, err)
+	assert.Equal(t, 400, err.httpCode)
+	assert.Equal(t, "Error during decoding the authentication request body", err.errorMsg)
 }
 
 /* ################################################################################################################## */
