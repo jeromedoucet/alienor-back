@@ -7,7 +7,6 @@ import (
 	"github.com/jeromedoucet/alienor-back/model"
 	"encoding/json"
 	"github.com/couchbase/gocb"
-	"fmt"
 )
 
 // team creation means to be authenticated
@@ -30,6 +29,7 @@ func handleTeam(w http.ResponseWriter, r *http.Request) {
 	dec := json.NewDecoder(r.Body)
 	var req TeamCreationReq
 	err = dec.Decode(&req)
+	// todo check err and test me !
 
 	ctrlErr := checkTeamExist(&req)
 	if ctrlErr != nil {
@@ -53,10 +53,7 @@ func handleTeam(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// todo test me
 	}
-	newTeam, _ := json.Marshal(role.Team)
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(201)
-	fmt.Fprintf(w, "%s", newTeam)
+	writeJsonResponse(w, role.Team, 201)
 }
 
 func checkTeamExist(req *TeamCreationReq) *ctrlError {

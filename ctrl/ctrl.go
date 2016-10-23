@@ -22,18 +22,24 @@ func (e *ctrlError) Error() string {
 }
 
 // register and prepare the endpoints
-func InitEndPoints(router component.Router, couchBaseAddr string, bucketPwd string, secret string) {
+func InitEndPoints(router component.Router, couchBaseAddr string, bucketPwd string, s string) {
 	rep.InitRepo(couchBaseAddr, bucketPwd)
-	secr = []byte(secret)
+	secret = []byte(s)
 	initAuthEndPoint(router)
 	initUserEndPoint(router)
 	initTeamEndPoint(router)
 }
 
-// todo test me !
+// write the error directly on the given response writer
 func writeError(w http.ResponseWriter, err *ctrlError)  {
-	errBody, _ := json.Marshal(ErrorBody{Msg:err.errorMsg})
+	writeJsonResponse(w, ErrorBody{Msg:err.errorMsg}, err.httpCode)
+}
+
+// write an arbitrary response on the writer with the desired http code
+// todo test me + handle the marshall err !
+func writeJsonResponse(w http.ResponseWriter, data interface{}, code int)  {
+	body, _ := json.Marshal(data)
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(err.httpCode)
-	fmt.Fprintf(w, "%s", errBody)
+	w.WriteHeader(code)
+	fmt.Fprintf(w, "%s", body)
 }

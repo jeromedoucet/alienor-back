@@ -11,13 +11,13 @@ import (
 
 func TestIsLoggedWithSuccess(t *testing.T) {
 	// given
-	secr = []byte("some secret")
+	secret = []byte("some secret")
 	usr := model.User{Identifier: "leroy.jenkins", Type:model.USER}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub": usr.Identifier,
 		"exp": time.Now().Add(60 * time.Second).Unix(),
 	})
-	tokenString, _ := token.SignedString(secr)
+	tokenString, _ := token.SignedString(secret)
 	r := http.Request{Header:http.Header{}}
 	r.Header.Set("Authorization", "bearer " + tokenString)
 	// when
@@ -45,14 +45,14 @@ func TestIsLoggedWithBadToken(t *testing.T) {
 
 func TestIsLoggedWithExpiredToken(t *testing.T) {
 	// given
-	secr = []byte("some secret")
+	secret = []byte("some secret")
 
 	usr := model.User{Identifier: "leroy.jenkins", Type:model.USER}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub": usr.Identifier,
 		"exp": time.Now().Add(-60 * time.Second).Unix(),
 	})
-	tokenString, _ := token.SignedString(secr)
+	tokenString, _ := token.SignedString(secret)
 	r := http.Request{Header:http.Header{}}
 	r.Header.Set("Authorization", "bearer " + tokenString)
 	// when
@@ -62,13 +62,13 @@ func TestIsLoggedWithExpiredToken(t *testing.T) {
 
 func TestIsLoggedWithoutBearerPrefix(t *testing.T) {
 	// given
-	secr = []byte("some secret")
+	secret = []byte("some secret")
 	usr := model.User{Identifier: "leroy.jenkins", Type:model.USER}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub": usr.Identifier,
 		"exp": time.Now().Add(60 * time.Second).Unix(),
 	})
-	tokenString, _ := token.SignedString(secr)
+	tokenString, _ := token.SignedString(secret)
 	r := http.Request{Header:http.Header{}}
 	r.Header.Set("Authorization", tokenString)
 	// when
@@ -82,13 +82,13 @@ func TestIsLoggedWithoutBearerPrefix(t *testing.T) {
 
 func BenchmarkIsLogged(b *testing.B) {
 	// given
-	secr = []byte("some secret")
+	secret = []byte("some secret")
 	usr := model.User{Identifier: "leroy.jenkins", Type:model.USER}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub": usr.Identifier,
 		"exp": time.Now().Add(60 * time.Second).Unix(),
 	})
-	tokenString, _ := token.SignedString(secr)
+	tokenString, _ := token.SignedString(secret)
 	r := http.Request{Header:http.Header{}}
 	r.Header.Set("Authorization", "bearer " + tokenString)
 	// bench

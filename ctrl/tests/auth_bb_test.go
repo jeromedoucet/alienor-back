@@ -13,6 +13,9 @@ import (
 	"github.com/jeromedoucet/alienor-back/utils"
 )
 
+
+// todo => check the error msg !
+
 func TestHandleAuthSuccess(t *testing.T) {
 	// given
 	utils.Before()

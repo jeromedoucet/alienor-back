@@ -24,38 +24,44 @@ type AuthRes struct {
 }
 
 var (
-	secr []byte
+	secret []byte
 )
 
 // authentication handler
 func handleAuth(w http.ResponseWriter, r *http.Request) {
-	dec := json.NewDecoder(r.Body)
-	var req AuthReq
-	err := dec.Decode(&req)
+	usr, err := checkUserCredential(r)
 	if err != nil {
-		w.WriteHeader(400)
-		return
-	}
-	usr, _ := rep.GetUser(req.Login)
-	if usr == nil {
-		w.WriteHeader(404)
-		return
-	}
-	if bcrypt.CompareHashAndPassword([]byte(usr.Password), []byte(req.Pwd)) == nil {
+		writeError(w, err)
+	} else {
 		token, jwtError := createJwtToken(usr)
 		if jwtError != nil {
 			w.WriteHeader(500) //todo try to cover that (if possible)
 			return
 		}
-		res, marshallError := json.Marshal(AuthRes{Token:token})
-		if marshallError != nil {
-			w.WriteHeader(500) //todo try to cover that (if possible)
-			return
-		}
-		w.Write(res)
-	} else {
-		w.WriteHeader(400)
+		writeJsonResponse(w, AuthRes{Token:token}, 200)
 	}
+
+}
+
+// todo test me unit style !
+func checkUserCredential(r *http.Request) (usr *model.User, cError *ctrlError) {
+	dec := json.NewDecoder(r.Body)
+	var req AuthReq
+	err := dec.Decode(&req)
+	if err != nil {
+		cError = &ctrlError{httpCode:400, errorMsg:"Error during decoding the authentication request body"}
+		return
+	}
+	usr, _ = rep.GetUser(req.Login)
+	if usr == nil {
+		cError = &ctrlError{httpCode:404, errorMsg:"Unknow User"}
+		return
+	}
+	err = bcrypt.CompareHashAndPassword([]byte(usr.Password), []byte(req.Pwd))
+	if err != nil {
+		cError = &ctrlError{httpCode:400, errorMsg:"Bad credentials"}
+	}
+	return
 }
 
 // create the token used for the newly created session
@@ -65,7 +71,7 @@ func createJwtToken(usr *model.User) (token string, err error) {
 		"sub": usr.Identifier,
 		"exp": time.Now().Add(20 * time.Minute).Unix(),
 	})
-	token, err = t.SignedString(secr)
+	token, err = t.SignedString(secret)
 	return
 }
 
@@ -103,5 +109,5 @@ func keyFunc(token *jwt.Token) (interface{}, error) {
 	if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 		return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 	}
-	return secr, nil
+	return secret, nil
 }

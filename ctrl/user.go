@@ -7,36 +7,44 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/jeromedoucet/alienor-back/rep"
-	"fmt"
 )
 
 // user handler
 func handleUser(w http.ResponseWriter, r *http.Request) {
-	usr := model.NewUser()
-	var err error
-	dec := json.NewDecoder(r.Body)
-	err = dec.Decode(usr)
-
+	usr, err := doCreateUser(r)
 	if err != nil {
-		w.WriteHeader(400)
+		writeError(w, err)
+	} else {
+		usr.Password = []byte{} // don't send the password !
+		writeJsonResponse(w, usr, 201)
+	}
+}
+
+// todo test me unit style !
+// create a user using the request. Return an ctrlError if
+// on issue
+func doCreateUser(r *http.Request) (usr *model.User, cError *ctrlError) {
+	usr = model.NewUser()
+	dec := json.NewDecoder(r.Body)
+	err := dec.Decode(usr)
+	if err != nil {
+		cError = &ctrlError{httpCode:400, errorMsg:"Error during decoding the user creation request body"}
 		return
 	}
 	if checkField(usr) != nil {
-		w.WriteHeader(400)
+		cError = &ctrlError{httpCode:400, errorMsg:`Error during parsing the user creation request body
+		 : there is missing fields`}
 		return
 	}
 	err = rep.InsertUser(usr)
 	if err != nil {
-		w.WriteHeader(409)
-		return
+		cError = &ctrlError{httpCode:409, errorMsg:`Error during creating a new user
+		 : user already exist`}
 	}
-	usr.Password = []byte{} // don't send the password !
-	usrSaved, _ := json.Marshal(usr)
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(201)
-	fmt.Fprintf(w, "%s", usrSaved)
+	return
 }
 
+// todo test me unit style !
 // check the user fields
 func checkField(usr *model.User) error {
 	if usr.Identifier == "" {

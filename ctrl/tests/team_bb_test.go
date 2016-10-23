@@ -66,7 +66,7 @@ func TestTeamCreationWhenNotAuthenticated(t *testing.T) {
 	assert.Equal(t, 0, len(actualUsr.Roles))
 }
 
-// todo bench this test ! => first n1ql query
+// todo bench this test ! => first n1ql query => with a lot of data of course !
 // todo check the error message too
 func TestTeamCreationWhenTeamAlreadyExist(t *testing.T) {
 	// given
@@ -94,3 +94,5 @@ func TestTeamCreationWhenTeamAlreadyExist(t *testing.T) {
 	actualUsr := utils.GetUser(leroy.Identifier)
 	assert.Equal(t, 0, len(actualUsr.Roles))
 }
+
+//todo test redirection !
