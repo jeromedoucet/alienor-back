@@ -20,7 +20,6 @@ type TeamCreationReq struct {
 }
 
 func handleTeam(w http.ResponseWriter, r *http.Request) {
-	var usr *model.User
 	principal, err := CheckToken(r)
 	if err != nil {
 		w.WriteHeader(401)
@@ -38,8 +37,9 @@ func handleTeam(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var cas gocb.Cas
-	usr, cas = rep.GetUser(principal.Identifier)
-	if usr == nil { // todo user nil ?? challenge me !
+	usr := model.NewUser()
+	cas, err = userRepository.Get(principal.Identifier, usr)
+	if err != nil { // todo user nil ?? challenge me !
 		// todo test me
 		return
 	}
@@ -49,7 +49,7 @@ func handleTeam(w http.ResponseWriter, r *http.Request) {
 	} else {
 		usr.Roles = append(usr.Roles, role)
 	}
-	err = rep.UpdateUser(usr, cas)
+	err = userRepository.Update(usr, cas)
 	if err != nil {
 		// todo test me
 	}

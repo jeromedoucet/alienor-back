@@ -21,11 +21,13 @@ func TestGetUserShouldUserWithSuccess(t *testing.T) {
 	}
 	utils.Populate(map[string]interface{}{"user:" + usr.Identifier: usr})
 	rep.InitRepo(utils.CouchBaseAddr, "")
-
+	actualUser := model.NewUser()
+	userRepository := new(rep.UserRepository)
 	// when
-	actualUser, cas := rep.GetUser(usr.Identifier)
+	cas, err := userRepository.Get(usr.Identifier, actualUser)
 
 	// then
+	assert.Nil(t, err)
 	assert.NotNil(t, cas)
 	assert.Equal(t, usr.Email, actualUser.Email)
 	assert.Equal(t, usr.ForName, actualUser.ForName)
@@ -38,10 +40,12 @@ func TestGetUserShouldUserWithError(t *testing.T) {
 	utils.Before()
 	defer utils.Clean()
 	rep.InitRepo(utils.CouchBaseAddr, "")
+	actualUser := model.NewUser()
+	userRepository := new(rep.UserRepository)
 
 	// when
-	usr, _ := rep.GetUser("leroy.jenkins")
+	_, err := userRepository.Get("leroy.jenkins", actualUser)
 
 	// then
-	assert.Nil(t, usr)
+	assert.NotNil(t, err)
 }

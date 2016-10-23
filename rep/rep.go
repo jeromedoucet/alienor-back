@@ -11,9 +11,17 @@ var (
 	bucket *gocb.Bucket
 )
 
+// A repository provide some basic operations
+// on data into data store
+type Repository interface {
+	Get(identifier string, entity interface{}) (gocb.Cas, error)
+	Insert(entity interface{}) error
+	Update(entity interface{}, cas gocb.Cas) error
+}
+
 // prepare the repositories for requests.
 // todo test me
-func InitRepo(couchBaseAddr string, bucketPwd string)  {
+func InitRepo(couchBaseAddr string, bucketPwd string) {
 	// todo create the bucket if needed !
 	cluster, err := gocb.Connect("couchbase://" + couchBaseAddr)
 	if err != nil {

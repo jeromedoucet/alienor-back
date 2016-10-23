@@ -8,6 +8,10 @@ import (
 	"encoding/json"
 )
 
+var (
+	userRepository rep.Repository = new(rep.UserRepository)
+)
+
 type ctrlError struct {
 	httpCode int
 	errorMsg string
@@ -31,13 +35,13 @@ func InitEndPoints(router component.Router, couchBaseAddr string, bucketPwd stri
 }
 
 // write the error directly on the given response writer
-func writeError(w http.ResponseWriter, err *ctrlError)  {
+func writeError(w http.ResponseWriter, err *ctrlError) {
 	writeJsonResponse(w, ErrorBody{Msg:err.errorMsg}, err.httpCode)
 }
 
 // write an arbitrary response on the writer with the desired http code
 // todo test me + handle the marshall err !
-func writeJsonResponse(w http.ResponseWriter, data interface{}, code int)  {
+func writeJsonResponse(w http.ResponseWriter, data interface{}, code int) {
 	body, _ := json.Marshal(data)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)

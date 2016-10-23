@@ -6,7 +6,6 @@ import (
 	"github.com/jeromedoucet/alienor-back/model"
 	"encoding/json"
 	"errors"
-	"github.com/jeromedoucet/alienor-back/rep"
 )
 
 // user handler
@@ -36,7 +35,7 @@ func doCreateUser(r *http.Request) (usr *model.User, cError *ctrlError) {
 		 : there is missing fields`}
 		return
 	}
-	err = rep.InsertUser(usr)
+	err = userRepository.Insert(usr)
 	if err != nil {
 		cError = &ctrlError{httpCode:409, errorMsg:`Error during creating a new user
 		 : user already exist`}

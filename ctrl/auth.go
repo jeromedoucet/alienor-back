@@ -11,7 +11,6 @@ import (
 	"strings"
 	"errors"
 	"time"
-	"github.com/jeromedoucet/alienor-back/rep"
 )
 
 type AuthReq struct {
@@ -51,9 +50,10 @@ func checkUserCredential(r *http.Request) (usr *model.User, cError *ctrlError) {
 		cError = &ctrlError{httpCode:400, errorMsg:"Error during decoding the authentication request body"}
 		return
 	}
-	// todo test me => repo as an interface
-	usr, _ = rep.GetUser(req.Login)
-	if usr == nil {
+	// todo test me
+	usr = model.NewUser()
+	_, err = userRepository.Get(req.Login, usr)
+	if err != nil {
 		cError = &ctrlError{httpCode:404, errorMsg:"Unknow User"}
 		return
 	}
