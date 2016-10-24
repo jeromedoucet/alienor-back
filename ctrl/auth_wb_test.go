@@ -9,6 +9,11 @@ import (
 	"net/http"
 	"bytes"
 	"net/http/httptest"
+	"encoding/json"
+	"github.com/jeromedoucet/alienor-back/utils"
+	"github.com/couchbase/gocb"
+	"errors"
+	"github.com/jeromedoucet/alienor-back/rep"
 )
 
 func TestIsLoggedWithSuccess(t *testing.T) {
@@ -83,13 +88,34 @@ func TestCheckUserCredentialBadRequestBody(t *testing.T) {
 	req := httptest.NewRequest("POST", "http://127.0.0.1:8080", bytes.NewBufferString("some string"))
 
 	// when
-	usr, err :=checkUserCredential(req)
+	usr, err := checkUserCredential(req)
 
 	// then
 	assert.Nil(t, usr)
 	assert.NotNil(t, err)
 	assert.Equal(t, 400, err.httpCode)
 	assert.Equal(t, "Error during decoding the authentication request body", err.errorMsg)
+}
+
+func TestCheckUserUnknownUser(t *testing.T) {
+	// given
+	userInReq := model.User{Identifier: "leroy.jenkins", Type:model.USER}
+	body, _ := json.Marshal(userInReq)
+	req := httptest.NewRequest("POST", "http://127.0.0.1:8080", bytes.NewBuffer(body))
+	defer func() {
+		userRepository = new(rep.UserRepository) // reset userRepository
+	}()
+	userRepository = &utils.RepositoryHeader{DoGet:func(identifier string, entity interface{}) (gocb.Cas, error) {
+		return 0, errors.New("some error")
+	}}
+
+	// when
+	_, err := checkUserCredential(req)
+
+	// then
+	assert.NotNil(t, err)
+	assert.Equal(t, 404, err.httpCode)
+	assert.Equal(t, "Unknow User", err.errorMsg)
 }
 
 /* ################################################################################################################## */
