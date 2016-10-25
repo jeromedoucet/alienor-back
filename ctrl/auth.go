@@ -37,11 +37,13 @@ func handleAuth(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(500)
 			return
 		}
-		writeJsonResponse(w, AuthRes{Token:token}, 200)
+		writeJsonResponse(w, &AuthRes{Token:token}, 200)
 	}
 
 }
 
+// do perform req unmarshal, user fetch and password comparison
+// as check during authentication
 func checkUserCredential(r *http.Request) (usr *model.User, cError *ctrlError) {
 	dec := json.NewDecoder(r.Body)
 	var req AuthReq
@@ -56,7 +58,6 @@ func checkUserCredential(r *http.Request) (usr *model.User, cError *ctrlError) {
 		cError = &ctrlError{httpCode:404, errorMsg:"Unknow User"}
 		return
 	}
-	// todo test me
 	err = bcrypt.CompareHashAndPassword([]byte(usr.Password), []byte(req.Pwd))
 	if err != nil {
 		cError = &ctrlError{httpCode:400, errorMsg:"Bad credentials"}
@@ -82,7 +83,7 @@ func initAuthEndPoint(router component.Router) {
 
 // this func will check the JWT token. If valid, a user is return
 // an error otherwise.
-func CheckToken(r *http.Request) (usr model.User, err error) {
+func CheckToken(r *http.Request) (usr *model.User, err error) {
 	auth := r.Header.Get("Authorization")
 	if !strings.HasPrefix(auth, "bearer ") {
 		err = errors.New("no valid authorization token")
@@ -96,6 +97,7 @@ func CheckToken(r *http.Request) (usr model.User, err error) {
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		usr = new(model.User)
 		usr.Identifier = claims["sub"].(string)
 	} else {
 		err = errors.New("invalid token or invalid claim type")

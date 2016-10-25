@@ -118,6 +118,29 @@ func TestCheckUserUnknownUser(t *testing.T) {
 	assert.Equal(t, "Unknow User", err.errorMsg)
 }
 
+func TestCheckUserPadPassword(t *testing.T) {
+	// given
+	userInReq := AuthReq{Login: "leroy.jenkins", Pwd: "wipe"}
+	body, _ := json.Marshal(userInReq)
+	req := httptest.NewRequest("POST", "http://127.0.0.1:8080", bytes.NewBuffer(body))
+	defer func() {
+		userRepository = new(rep.UserRepository) // reset userRepository
+	}()
+	userRepository = &utils.RepositoryHeader{DoGet:func(identifier string, entity interface{}) (gocb.Cas, error) {
+		userInRepo := entity.(*model.User)
+		userInRepo.Password = []byte("roxxor")
+		return 0, nil
+	}}
+
+	// when
+	_, err := checkUserCredential(req)
+
+	// then
+	assert.NotNil(t, err)
+	assert.Equal(t, 400, err.httpCode)
+	assert.Equal(t, "Bad credentials", err.errorMsg)
+}
+
 /* ################################################################################################################## */
 /* ##############################################  BENCH  ########################################################### */
 /* ################################################################################################################## */
