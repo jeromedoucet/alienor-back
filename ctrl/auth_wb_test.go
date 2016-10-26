@@ -14,6 +14,7 @@ import (
 	"github.com/couchbase/gocb"
 	"errors"
 	"github.com/jeromedoucet/alienor-back/rep"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func TestIsLoggedWithSuccess(t *testing.T) {
@@ -141,11 +142,37 @@ func TestCheckUserPadPassword(t *testing.T) {
 	assert.Equal(t, "Bad credentials", err.errorMsg)
 }
 
+func TestCheckUserSuccessFul(t *testing.T) {
+	// given
+	userInReq := AuthReq{Login: "leroy.jenkins", Pwd: "wipe"}
+	body, _ := json.Marshal(userInReq)
+	req := httptest.NewRequest("POST", "http://127.0.0.1:8080", bytes.NewBuffer(body))
+	defer func() {
+		userRepository = new(rep.UserRepository) // reset userRepository
+	}()
+	userRepository = &utils.RepositoryHeader{DoGet:func(identifier string, entity interface{}) (gocb.Cas, error) {
+		pwd, _ := bcrypt.GenerateFromPassword([]byte("wipe"), bcrypt.DefaultCost)
+		userInRepo := entity.(*model.User)
+		userInRepo.Password = pwd
+		userInRepo.Identifier = "leroy.jenkins"
+		return 0, nil
+	}}
+
+	// when
+	usr, err := checkUserCredential(req)
+
+	// then
+	assert.Nil(t, err)
+	assert.NotNil(t, usr)
+	assert.Equal(t, "leroy.jenkins", usr.Identifier)
+}
+
 /* ################################################################################################################## */
 /* ##############################################  BENCH  ########################################################### */
 /* ################################################################################################################## */
 
-func BenchmarkIsLogged(b *testing.B) {
+// benchmark the check token function
+func BenchmarkCheckToken(b *testing.B) {
 	// given
 	secret = []byte("some secret")
 	usr := model.User{Identifier: "leroy.jenkins", Type:model.USER}
@@ -162,3 +189,25 @@ func BenchmarkIsLogged(b *testing.B) {
 	}
 }
 
+// benchmark of the check user function (without db connection)
+func BenchmarkChechUser(b *testing.B) {
+	// given
+	userInReq := AuthReq{Login: "leroy.jenkins", Pwd: "wipe"}
+	body, _ := json.Marshal(userInReq)
+	req := httptest.NewRequest("POST", "http://127.0.0.1:8080", bytes.NewBuffer(body))
+	defer func() {
+		userRepository = new(rep.UserRepository) // reset userRepository
+	}()
+	userRepository = &utils.RepositoryHeader{DoGet:func(identifier string, entity interface{}) (gocb.Cas, error) {
+		pwd, _ := bcrypt.GenerateFromPassword([]byte("wipe"), bcrypt.DefaultCost)
+		userInRepo := entity.(*model.User)
+		userInRepo.Password = pwd
+		userInRepo.Identifier = "leroy.jenkins"
+		return 0, nil
+	}}
+
+	// bench
+	for n := 0; n < b.N; n++ {
+		checkUserCredential(req)
+	}
+}
