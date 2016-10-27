@@ -19,6 +19,7 @@ type Repository interface {
 	Update(entity interface{}, cas gocb.Cas) error
 }
 
+// todo close the bucket on exit
 // prepare the repositories for requests.
 // todo test me
 func InitRepo(couchBaseAddr string, bucketPwd string) {

@@ -49,3 +49,17 @@ func TestGetUserShouldUserWithError(t *testing.T) {
 	// then
 	assert.NotNil(t, err)
 }
+
+func TestInsertANonUserEntity(t *testing.T) {
+	// given
+	utils.Before()
+	defer utils.Clean()
+	userRepository := new(rep.UserRepository)
+
+	// when
+	err := userRepository.Insert("A string is not a user :)")
+
+	// then
+	assert.NotNil(t, err)
+	assert.Equal(t, "Cannot Insert a non user entity !", err.Error())
+}
