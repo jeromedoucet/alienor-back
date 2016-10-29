@@ -3,6 +3,7 @@ package rep
 import (
 	"github.com/couchbase/gocb"
 	"fmt"
+	"github.com/jeromedoucet/alienor-back/model"
 )
 
 const bucketName string = "alienor"
@@ -14,9 +15,9 @@ var (
 // A repository provide some basic operations
 // on data into data store
 type Repository interface {
-	Get(identifier string, entity interface{}) (gocb.Cas, error)
-	Insert(entity interface{}) error
-	Update(entity interface{}, cas gocb.Cas) error
+	Get(identifier string, document model.Document) (gocb.Cas, error)
+	Insert(document model.Document) error
+	Update(document model.Document, cas gocb.Cas) error
 }
 
 // todo close the bucket on exit

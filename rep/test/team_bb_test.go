@@ -11,9 +11,8 @@ import (
 func TestTeamExistWhenTeamExist(t *testing.T) {
 	// given
 	utils.Before()
-	defer utils.Clean()
 	illidan := utils.PrepareUserWithTeam("A-Team", "illidan.stormrage")
-	utils.Populate(map[string]interface{}{"user:" + illidan.Identifier: illidan})
+	utils.Populate(map[string]interface{}{"user:" + illidan.Id: illidan})
 	rep.InitRepo(utils.CouchBaseAddr, "")
 
 	// when
@@ -27,7 +26,6 @@ func TestTeamExistWhenTeamExist(t *testing.T) {
 func TestTeamExistWhenDoesNotTeamExist(t *testing.T) {
 	// given
 	utils.Before()
-	defer utils.Clean()
 	rep.InitRepo(utils.CouchBaseAddr, "")
 
 	// when

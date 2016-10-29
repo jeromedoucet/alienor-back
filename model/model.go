@@ -11,6 +11,10 @@ type RoleVal string
 const ADMIN RoleVal = "ADMIN";
 const TRANSLATOR RoleVal = "TRANSLATOR";
 
+type Document interface {
+	Identifier() string
+}
+
 // a team that is used to attach token
 type Team struct {
 	Type DocType `json:"type"`
@@ -45,13 +49,17 @@ func NewRole() *Role {
 }
 
 type User struct {
-	Identifier string `json:"identifier"`
-	Type DocType `json:"type"`
-	ForName string `json:"forName"`
-	Name string `json:"name"`
-	Email string `json:"email"`
-	Roles []*Role `json:"roles"`
+	Id       string `json:"identifier"`
+	Type     DocType `json:"type"`
+	ForName  string `json:"forName"`
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Roles    []*Role `json:"roles"`
 	Password []byte `json:"password"`
+}
+
+func (u *User) Identifier() string {
+	return u.Id
 }
 
 // todo test me

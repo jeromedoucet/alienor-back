@@ -20,9 +20,9 @@ import (
 func TestIsLoggedWithSuccess(t *testing.T) {
 	// given
 	secret = []byte("some secret")
-	usr := model.User{Identifier: "leroy.jenkins", Type:model.USER}
+	usr := model.User{Id: "leroy.jenkins", Type:model.USER}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": usr.Identifier,
+		"sub": usr.Id,
 		"exp": time.Now().Add(60 * time.Second).Unix(),
 	})
 	tokenString, _ := token.SignedString(secret)
@@ -31,7 +31,7 @@ func TestIsLoggedWithSuccess(t *testing.T) {
 	// when
 	unMarshaledUsr, err := CheckToken(&r)
 	assert.Nil(t, err)
-	assert.Equal(t, usr.Identifier, unMarshaledUsr.Identifier)
+	assert.Equal(t, usr.Id, unMarshaledUsr.Id)
 }
 
 func TestIsLoggedWithoutToken(t *testing.T) {
@@ -55,9 +55,9 @@ func TestIsLoggedWithExpiredToken(t *testing.T) {
 	// given
 	secret = []byte("some secret")
 
-	usr := model.User{Identifier: "leroy.jenkins", Type:model.USER}
+	usr := model.User{Id: "leroy.jenkins", Type:model.USER}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": usr.Identifier,
+		"sub": usr.Id,
 		"exp": time.Now().Add(-60 * time.Second).Unix(),
 	})
 	tokenString, _ := token.SignedString(secret)
@@ -71,9 +71,9 @@ func TestIsLoggedWithExpiredToken(t *testing.T) {
 func TestIsLoggedWithoutBearerPrefix(t *testing.T) {
 	// given
 	secret = []byte("some secret")
-	usr := model.User{Identifier: "leroy.jenkins", Type:model.USER}
+	usr := model.User{Id: "leroy.jenkins", Type:model.USER}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": usr.Identifier,
+		"sub": usr.Id,
 		"exp": time.Now().Add(60 * time.Second).Unix(),
 	})
 	tokenString, _ := token.SignedString(secret)
@@ -100,13 +100,13 @@ func TestCheckUserCredentialBadRequestBody(t *testing.T) {
 
 func TestCheckUserUnknownUser(t *testing.T) {
 	// given
-	userInReq := model.User{Identifier: "leroy.jenkins", Type:model.USER}
+	userInReq := model.User{Id: "leroy.jenkins", Type:model.USER}
 	body, _ := json.Marshal(userInReq)
 	req := httptest.NewRequest("POST", "http://127.0.0.1:8080", bytes.NewBuffer(body))
 	defer func() {
 		userRepository = new(rep.UserRepository) // reset userRepository
 	}()
-	userRepository = &utils.RepositoryHeader{DoGet:func(identifier string, entity interface{}) (gocb.Cas, error) {
+	userRepository = &utils.RepositoryHeader{DoGet:func(identifier string,document model.Document) (gocb.Cas, error) {
 		return 0, errors.New("some error")
 	}}
 
@@ -119,7 +119,7 @@ func TestCheckUserUnknownUser(t *testing.T) {
 	assert.Equal(t, "Unknow User", err.errorMsg)
 }
 
-func TestCheckUserPadPassword(t *testing.T) {
+func TestCheckUserBadPassword(t *testing.T) {
 	// given
 	userInReq := AuthReq{Login: "leroy.jenkins", Pwd: "wipe"}
 	body, _ := json.Marshal(userInReq)
@@ -127,8 +127,8 @@ func TestCheckUserPadPassword(t *testing.T) {
 	defer func() {
 		userRepository = new(rep.UserRepository) // reset userRepository
 	}()
-	userRepository = &utils.RepositoryHeader{DoGet:func(identifier string, entity interface{}) (gocb.Cas, error) {
-		userInRepo := entity.(*model.User)
+	userRepository = &utils.RepositoryHeader{DoGet:func(identifier string, document model.Document) (gocb.Cas, error) {
+		userInRepo := document.(*model.User)
 		userInRepo.Password = []byte("roxxor")
 		return 0, nil
 	}}
@@ -150,11 +150,11 @@ func TestCheckUserSuccessFul(t *testing.T) {
 	defer func() {
 		userRepository = new(rep.UserRepository) // reset userRepository
 	}()
-	userRepository = &utils.RepositoryHeader{DoGet:func(identifier string, entity interface{}) (gocb.Cas, error) {
+	userRepository = &utils.RepositoryHeader{DoGet:func(identifier string, document model.Document) (gocb.Cas, error) {
 		pwd, _ := bcrypt.GenerateFromPassword([]byte("wipe"), bcrypt.DefaultCost)
-		userInRepo := entity.(*model.User)
+		userInRepo := document.(*model.User)
 		userInRepo.Password = pwd
-		userInRepo.Identifier = "leroy.jenkins"
+		userInRepo.Id = "leroy.jenkins"
 		return 0, nil
 	}}
 
@@ -164,7 +164,7 @@ func TestCheckUserSuccessFul(t *testing.T) {
 	// then
 	assert.Nil(t, err)
 	assert.NotNil(t, usr)
-	assert.Equal(t, "leroy.jenkins", usr.Identifier)
+	assert.Equal(t, "leroy.jenkins", usr.Id)
 }
 
 /* ################################################################################################################## */
@@ -175,9 +175,9 @@ func TestCheckUserSuccessFul(t *testing.T) {
 func BenchmarkCheckToken(b *testing.B) {
 	// given
 	secret = []byte("some secret")
-	usr := model.User{Identifier: "leroy.jenkins", Type:model.USER}
+	usr := model.User{Id: "leroy.jenkins", Type:model.USER}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": usr.Identifier,
+		"sub": usr.Id,
 		"exp": time.Now().Add(60 * time.Second).Unix(),
 	})
 	tokenString, _ := token.SignedString(secret)
@@ -198,11 +198,11 @@ func BenchmarkChechUser(b *testing.B) {
 	defer func() {
 		userRepository = new(rep.UserRepository) // reset userRepository
 	}()
-	userRepository = &utils.RepositoryHeader{DoGet:func(identifier string, entity interface{}) (gocb.Cas, error) {
+	userRepository = &utils.RepositoryHeader{DoGet:func(identifier string, entity model.Document) (gocb.Cas, error) {
 		pwd, _ := bcrypt.GenerateFromPassword([]byte("wipe"), bcrypt.DefaultCost)
 		userInRepo := entity.(*model.User)
 		userInRepo.Password = pwd
-		userInRepo.Identifier = "leroy.jenkins"
+		userInRepo.Id = "leroy.jenkins"
 		return 0, nil
 	}}
 

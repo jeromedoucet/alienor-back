@@ -19,13 +19,12 @@ import (
 func TestHandleAuthSuccess(t *testing.T) {
 	// given
 	utils.Before()
-	defer utils.Clean()
 	pwd := "wipe"
 	login := "leroy.jenkins"
 	hPwd, _ := bcrypt.GenerateFromPassword([]byte(pwd), bcrypt.DefaultCost)
-	usr := model.User{Identifier: login, Type:model.USER, Password: hPwd, }
+	usr := model.User{Id: login, Type:model.USER, Password: hPwd, }
 
-	utils.Populate(map[string]interface{}{"user:" + usr.Identifier: usr})
+	utils.Populate(map[string]interface{}{"user:" + usr.Id: usr})
 
 	s := utils.StartHttp(func(r component.Router) {
 		ctrl.InitEndPoints(r, utils.CouchBaseAddr, "", utils.Secret)
@@ -54,13 +53,12 @@ func TestHandleAuthSuccess(t *testing.T) {
 func TestHandleBadPassword(t *testing.T) {
 	// given
 	utils.Before()
-	defer utils.Clean()
 	pwd := "wipe"
 	login := "leroy.jenkins"
 	hPwd, _ := bcrypt.GenerateFromPassword([]byte(pwd), bcrypt.DefaultCost)
-	usr := model.User{Identifier: login, Type:model.USER, Password: hPwd}
+	usr := model.User{Id: login, Type:model.USER, Password: hPwd}
 
-	utils.Populate(map[string]interface{}{"user:" + usr.Identifier: usr})
+	utils.Populate(map[string]interface{}{"user:" + usr.Id: usr})
 
 	s := utils.StartHttp(func(r component.Router) {
 		ctrl.InitEndPoints(r, utils.CouchBaseAddr, "", utils.Secret)
@@ -79,7 +77,6 @@ func TestHandleBadPassword(t *testing.T) {
 func TestHandleUnknownUser(t *testing.T) {
 	// given
 	utils.Before()
-	defer utils.Clean()
 
 	s := utils.StartHttp(func(r component.Router) {
 		ctrl.InitEndPoints(r, utils.CouchBaseAddr, "", utils.Secret)

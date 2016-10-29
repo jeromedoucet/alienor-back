@@ -69,7 +69,7 @@ func checkUserCredential(r *http.Request) (usr *model.User, cError *ctrlError) {
 func createJwtToken(usr *model.User) (token string, err error) {
 	// todo make the exp variable
 	t := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": usr.Identifier,
+		"sub": usr.Id,
 		"exp": time.Now().Add(20 * time.Minute).Unix(),
 	})
 	token, err = t.SignedString(secret)
@@ -98,7 +98,7 @@ func CheckToken(r *http.Request) (usr *model.User, err error) {
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		usr = new(model.User)
-		usr.Identifier = claims["sub"].(string)
+		usr.Id = claims["sub"].(string)
 	} else {
 		err = errors.New("invalid token or invalid claim type")
 		return

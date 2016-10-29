@@ -33,6 +33,7 @@ func Before() {
 	if err != nil {
 		panic(err)
 	}
+	defer Bucket.Close()
 	bManager := Bucket.Manager("alienor", "")
 	err = bManager.CreatePrimaryIndex("aliaIndex", true, false)
 	if err != nil {
@@ -44,10 +45,6 @@ func Before() {
 	if err != nil {
 		panic(err)
 	}
-}
-
-func Clean() {
-	Bucket.Close();
 }
 
 // exec registrator and start a tls server
@@ -75,6 +72,8 @@ func DoReqWithToken(url string, verb string, reader io.Reader, token string) (*h
 
 // get one User
 func GetUser(identifier string) (*model.User) {
+	Bucket, _ = Cluster.OpenBucket("alienor", "")
+	defer Bucket.Close()
 	usr := model.NewUser()
 	_, err := Bucket.Get("user:" + identifier, usr)
 	if err != nil {
@@ -86,7 +85,7 @@ func GetUser(identifier string) (*model.User) {
 func CreateToken(usr *model.User) (token string) {
 	var err error
 	t := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": usr.Identifier,
+		"sub": usr.Id,
 		"exp": time.Now().Add(20 * time.Minute).Unix(),
 	})
 	token, err = t.SignedString([]byte(Secret))
@@ -102,12 +101,14 @@ func PrepareUserWithTeam(teamName string, identifier string) *model.User {
 	role := model.NewRole()
 	role.Team = team
 	user := model.NewUser()
-	user.Identifier = identifier
+	user.Id = identifier
 	user.Roles = []*model.Role{role}
 	return user
 }
 
 func Populate(data map[string]interface{}) {
+	Bucket, _ = Cluster.OpenBucket("alienor", "")
+	defer Bucket.Close()
 	var items []gocb.BulkOp
 	for k, v := range data {
 		items = append(items, &gocb.UpsertOp{Key: k, Value: v})

@@ -16,8 +16,7 @@ import (
 func TestUserCreationSuccessful(t *testing.T) {
 	// given
 	utils.Before()
-	defer utils.Clean()
-	usr := model.User{Identifier:"leroy.jenkins",
+	usr := model.User{Id:"leroy.jenkins",
 		Type:model.USER,
 		ForName:"Leroy",
 		Name:"Jenkins",
@@ -45,7 +44,7 @@ func TestUserCreationSuccessful(t *testing.T) {
 	assert.Equal(t, usr.ForName, userRes.ForName)
 	assert.Equal(t, usr.Name, userRes.Name)
 	// check db
-	actualUser := utils.GetUser(usr.Identifier)
+	actualUser := utils.GetUser(usr.Id)
 	assert.Equal(t, usr.Email, actualUser.Email)
 	assert.Equal(t, usr.ForName, actualUser.ForName)
 	assert.Equal(t, usr.Name, actualUser.Name)
@@ -55,7 +54,6 @@ func TestUserCreationSuccessful(t *testing.T) {
 func TestUserCreationMalFormedJson(t *testing.T) {
 	// given
 	utils.Before()
-	defer utils.Clean()
 	s := utils.StartHttp(func(r component.Router) {ctrl.InitEndPoints(r, utils.CouchBaseAddr, "", utils.Secret)})
 	defer s.Close()
 	body := []byte("a malformed json")
@@ -71,14 +69,13 @@ func TestUserCreationMalFormedJson(t *testing.T) {
 func TestUserCreationExistingIdentifier(t *testing.T) {
 	// given
 	utils.Before()
-	defer utils.Clean()
-	usr := model.User{Identifier:"leroy.jenkins",
+	usr := model.User{Id:"leroy.jenkins",
 		ForName:"Leroy",
 		Name:"Jenkins",
 		Email:"leroy.jenkins@wipe-guild.org",
 		Password:[]byte("wipe"),
 	}
-	utils.Populate(map[string]interface{}{"user:" + usr.Identifier: model.User{Identifier:usr.Identifier}})
+	utils.Populate(map[string]interface{}{"user:" + usr.Id: model.User{Id:usr.Id}})
 
 	s := utils.StartHttp(func(r component.Router) {ctrl.InitEndPoints(r, utils.CouchBaseAddr, "", utils.Secret)})
 	defer s.Close()
@@ -96,7 +93,6 @@ func TestUserCreationExistingIdentifier(t *testing.T) {
 func TestUserCreationMissingIdentifier(t *testing.T) {
 	// given
 	utils.Before()
-	defer utils.Clean()
 	usr := model.User{ForName:"Leroy",
 		Name:"Jenkins",
 		Email:"leroy.jenkins@wipe-guild.org",
@@ -119,8 +115,7 @@ func TestUserCreationMissingIdentifier(t *testing.T) {
 func TestUserCreationMissingForName(t *testing.T) {
 	// given
 	utils.Before()
-	defer utils.Clean()
-	usr := model.User{Identifier:"leroy.jenkins",
+	usr := model.User{Id:"leroy.jenkins",
 		Name:"Jenkins",
 		Email:"leroy.jenkins@wipe-guild.org",
 		Password:[]byte("wipe"),
@@ -142,8 +137,7 @@ func TestUserCreationMissingForName(t *testing.T) {
 func TestUserCreationMissingName(t *testing.T) {
 	// given
 	utils.Before()
-	defer utils.Clean()
-	usr := model.User{Identifier:"leroy.jenkins",
+	usr := model.User{Id:"leroy.jenkins",
 		ForName:"Leroy",
 		Email:"leroy.jenkins@wipe-guild.org",
 		Password:[]byte("wipe"),
@@ -165,8 +159,7 @@ func TestUserCreationMissingName(t *testing.T) {
 func TestUserCreationMissingEmail(t *testing.T) {
 	// given
 	utils.Before()
-	defer utils.Clean()
-	usr := model.User{Identifier:"leroy.jenkins",
+	usr := model.User{Id:"leroy.jenkins",
 		ForName:"Leroy",
 		Name:"Jenkins",
 		Password:[]byte("wipe"),
@@ -188,8 +181,7 @@ func TestUserCreationMissingEmail(t *testing.T) {
 func TestUserCreationMissingPassword(t *testing.T) {
 	// given
 	utils.Before()
-	defer utils.Clean()
-	usr := model.User{Identifier:"leroy.jenkins",
+	usr := model.User{Id:"leroy.jenkins",
 		ForName:"Leroy",
 		Name:"Jenkins",
 		Email:"leroy.jenkins@wipe-guild.org",

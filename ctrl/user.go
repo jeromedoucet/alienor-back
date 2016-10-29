@@ -46,7 +46,7 @@ func doCreateUser(r *http.Request) (usr *model.User, cError *ctrlError) {
 // todo test me unit style !
 // check the user fields
 func checkField(usr *model.User) error {
-	if usr.Identifier == "" {
+	if usr.Id == "" {
 		return errors.New("invalid identifier")
 	}
 	if usr.ForName == "" {

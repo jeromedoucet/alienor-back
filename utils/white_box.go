@@ -3,6 +3,7 @@ package utils
 import (
 	"net/http"
 	"github.com/couchbase/gocb"
+	"github.com/jeromedoucet/alienor-back/model"
 )
 
 // simple mock for htp writer
@@ -26,21 +27,29 @@ func (m *HttpWriterMock) WriteHeader(code int) {
 }
 
 type RepositoryHeader struct {
-	DoGet func (identifier string, entity interface{}) (gocb.Cas, error)
-	DoInsert func (entity interface{}) error
-	DoUpdate func (entity interface{}, cas gocb.Cas) error
+	DoGet func (identifier string, document model.Document) (gocb.Cas, error)
+	DoInsert func (document model.Document) error
+	DoUpdate func (document model.Document, cas gocb.Cas) error
 }
 
-func (rep * RepositoryHeader) Get(identifier string, entity interface{}) (gocb.Cas, error) {
-	return rep.DoGet(identifier, entity)
+func (rep * RepositoryHeader) Get(identifier string, document model.Document) (gocb.Cas, error) {
+	return rep.DoGet(identifier, document)
 }
 
-func (rep * RepositoryHeader) Insert(entity interface{}) error {
-	return rep.DoInsert(entity)
+func (rep * RepositoryHeader) Insert(document model.Document) error {
+	return rep.DoInsert(document)
 }
 
-func (rep * RepositoryHeader) Update(entity interface{}, cas gocb.Cas) error {
-	return rep.DoUpdate(entity, cas)
+func (rep * RepositoryHeader) Update(document model.Document, cas gocb.Cas) error {
+	return rep.DoUpdate(document, cas)
+}
+
+type MockDocument struct {
+	Id string
+}
+
+func (d * MockDocument) Identifier() string {
+	return d.Id
 }
 
 

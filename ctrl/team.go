@@ -38,7 +38,7 @@ func handleTeam(w http.ResponseWriter, r *http.Request) {
 
 	var cas gocb.Cas
 	usr := model.NewUser()
-	cas, err = userRepository.Get(principal.Identifier, usr)
+	cas, err = userRepository.Get(principal.Id, usr)
 	if err != nil { // todo user nil ?? challenge me !
 		// todo test me
 		return
