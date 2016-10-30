@@ -11,6 +11,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"testing"
 	"github.com/jeromedoucet/alienor-back/utils"
+	"fmt"
 )
 
 
@@ -22,7 +23,7 @@ func TestHandleAuthSuccess(t *testing.T) {
 	pwd := "wipe"
 	login := "leroy.jenkins"
 	hPwd, _ := bcrypt.GenerateFromPassword([]byte(pwd), bcrypt.DefaultCost)
-	usr := model.User{Id: login, Type:model.USER, Password: hPwd, }
+	usr := model.User{Id: login, Type:model.USER, Password: string(hPwd)}
 
 	utils.Populate(map[string]interface{}{"user:" + usr.Id: usr})
 
@@ -56,7 +57,7 @@ func TestHandleBadPassword(t *testing.T) {
 	pwd := "wipe"
 	login := "leroy.jenkins"
 	hPwd, _ := bcrypt.GenerateFromPassword([]byte(pwd), bcrypt.DefaultCost)
-	usr := model.User{Id: login, Type:model.USER, Password: hPwd}
+	usr := model.User{Id: login, Type:model.USER, Password: string(hPwd)}
 
 	utils.Populate(map[string]interface{}{"user:" + usr.Id: usr})
 
@@ -90,4 +91,18 @@ func TestHandleUnknownUser(t *testing.T) {
 	// then
 	assert.Nil(t, err)
 	assert.Equal(t, 404, res.StatusCode)
+}
+
+func TestToto(t *testing.T) {
+	// given
+
+	pwd, _ := bcrypt.GenerateFromPassword([]byte("test"), bcrypt.DefaultCost)
+	hash := string(pwd)
+
+	fmt.Println(hash)
+
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte("test"))
+
+	assert.Nil(t, err)
+
 }

@@ -21,7 +21,7 @@ func TestUserCreationSuccessful(t *testing.T) {
 		ForName:"Leroy",
 		Name:"Jenkins",
 		Email:"leroy.jenkins@wipe-guild.org",
-		Password:[]byte("wipe"),
+		Password:"wipe",
 		}
 
 	s := utils.StartHttp(func(r component.Router) {ctrl.InitEndPoints(r, utils.CouchBaseAddr, "", utils.Secret)})
@@ -48,7 +48,7 @@ func TestUserCreationSuccessful(t *testing.T) {
 	assert.Equal(t, usr.Email, actualUser.Email)
 	assert.Equal(t, usr.ForName, actualUser.ForName)
 	assert.Equal(t, usr.Name, actualUser.Name)
-	assert.Nil(t, bcrypt.CompareHashAndPassword(actualUser.Password, usr.Password))
+	assert.Nil(t, bcrypt.CompareHashAndPassword([]byte(actualUser.Password), []byte(usr.Password)))
 }
 
 func TestUserCreationMalFormedJson(t *testing.T) {
@@ -73,7 +73,7 @@ func TestUserCreationExistingIdentifier(t *testing.T) {
 		ForName:"Leroy",
 		Name:"Jenkins",
 		Email:"leroy.jenkins@wipe-guild.org",
-		Password:[]byte("wipe"),
+		Password:"wipe",
 	}
 	utils.Populate(map[string]interface{}{"user:" + usr.Id: model.User{Id:usr.Id}})
 
@@ -96,7 +96,7 @@ func TestUserCreationMissingIdentifier(t *testing.T) {
 	usr := model.User{ForName:"Leroy",
 		Name:"Jenkins",
 		Email:"leroy.jenkins@wipe-guild.org",
-		Password:[]byte("wipe"),
+		Password:"wipe",
 	}
 
 	s := utils.StartHttp(func(r component.Router) {ctrl.InitEndPoints(r, utils.CouchBaseAddr, "", utils.Secret)})
@@ -118,7 +118,7 @@ func TestUserCreationMissingForName(t *testing.T) {
 	usr := model.User{Id:"leroy.jenkins",
 		Name:"Jenkins",
 		Email:"leroy.jenkins@wipe-guild.org",
-		Password:[]byte("wipe"),
+		Password:"wipe",
 	}
 
 	s := utils.StartHttp(func(r component.Router) {ctrl.InitEndPoints(r, utils.CouchBaseAddr, "", utils.Secret)})
@@ -140,7 +140,7 @@ func TestUserCreationMissingName(t *testing.T) {
 	usr := model.User{Id:"leroy.jenkins",
 		ForName:"Leroy",
 		Email:"leroy.jenkins@wipe-guild.org",
-		Password:[]byte("wipe"),
+		Password:"wipe",
 	}
 
 	s := utils.StartHttp(func(r component.Router) {ctrl.InitEndPoints(r, utils.CouchBaseAddr, "", utils.Secret)})
@@ -162,7 +162,7 @@ func TestUserCreationMissingEmail(t *testing.T) {
 	usr := model.User{Id:"leroy.jenkins",
 		ForName:"Leroy",
 		Name:"Jenkins",
-		Password:[]byte("wipe"),
+		Password:"wipe",
 	}
 
 	s := utils.StartHttp(func(r component.Router) {ctrl.InitEndPoints(r, utils.CouchBaseAddr, "", utils.Secret)})

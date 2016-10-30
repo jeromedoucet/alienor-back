@@ -55,7 +55,7 @@ type User struct {
 	Name     string `json:"name"`
 	Email    string `json:"email"`
 	Roles    []*Role `json:"roles"`
-	Password []byte `json:"password"`
+	Password string `json:"password"`
 }
 
 func (u *User) Identifier() string {

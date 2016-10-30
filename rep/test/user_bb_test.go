@@ -16,7 +16,7 @@ func TestGetUserShouldUserWithSuccess(t *testing.T) {
 		ForName:"Leroy",
 		Name:"Jenkins",
 		Email:"leroy.jenkins@wipe-guild.org",
-		Password:[]byte("wipe"),
+		Password:"wipe",
 	}
 	utils.Populate(map[string]interface{}{"user:" + usr.Id: usr})
 	rep.InitRepo(utils.CouchBaseAddr, "")
@@ -31,7 +31,7 @@ func TestGetUserShouldUserWithSuccess(t *testing.T) {
 	assert.Equal(t, usr.Email, actualUser.Email)
 	assert.Equal(t, usr.ForName, actualUser.ForName)
 	assert.Equal(t, usr.Name, actualUser.Name)
-	assert.Equal(t, string(actualUser.Password), string(usr.Password))
+	assert.Equal(t, actualUser.Password, usr.Password)
 }
 
 func TestGetUserShouldUserWithError(t *testing.T) {

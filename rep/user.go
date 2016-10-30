@@ -31,8 +31,8 @@ func (UserRepository) Insert(document model.Document) (err error) {
 		err = errors.New("Cannot Insert a user without password!")
 		return
 	}
-	cPwd, _ := bcrypt.GenerateFromPassword(user.Password, bcrypt.DefaultCost) //todo handle error
-	user.Password = cPwd
+	cPwd, _ := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost) //todo handle error
+	user.Password = string(cPwd)
 	_, err = bucket.Insert(string(model.USER) + ":" + user.Id, user, 0)
 	return
 }

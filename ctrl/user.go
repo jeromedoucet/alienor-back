@@ -14,7 +14,7 @@ func handleUser(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeError(w, err)
 	} else {
-		usr.Password = []byte{} // don't send the password !
+		usr.Password = "" // don't send the password !
 		writeJsonResponse(w, usr, 201)
 	}
 }

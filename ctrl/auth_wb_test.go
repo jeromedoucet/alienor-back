@@ -129,7 +129,7 @@ func TestCheckUserBadPassword(t *testing.T) {
 	}()
 	userRepository = &utils.RepositoryHeader{DoGet:func(identifier string, document model.Document) (gocb.Cas, error) {
 		userInRepo := document.(*model.User)
-		userInRepo.Password = []byte("roxxor")
+		userInRepo.Password = "roxxor"
 		return 0, nil
 	}}
 
@@ -153,7 +153,7 @@ func TestCheckUserSuccessFul(t *testing.T) {
 	userRepository = &utils.RepositoryHeader{DoGet:func(identifier string, document model.Document) (gocb.Cas, error) {
 		pwd, _ := bcrypt.GenerateFromPassword([]byte("wipe"), bcrypt.DefaultCost)
 		userInRepo := document.(*model.User)
-		userInRepo.Password = pwd
+		userInRepo.Password = string(pwd)
 		userInRepo.Id = "leroy.jenkins"
 		return 0, nil
 	}}
@@ -201,7 +201,7 @@ func BenchmarkChechUser(b *testing.B) {
 	userRepository = &utils.RepositoryHeader{DoGet:func(identifier string, entity model.Document) (gocb.Cas, error) {
 		pwd, _ := bcrypt.GenerateFromPassword([]byte("wipe"), bcrypt.DefaultCost)
 		userInRepo := entity.(*model.User)
-		userInRepo.Password = pwd
+		userInRepo.Password = string(pwd)
 		userInRepo.Id = "leroy.jenkins"
 		return 0, nil
 	}}
