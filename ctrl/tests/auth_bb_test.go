@@ -11,7 +11,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"testing"
 	"github.com/jeromedoucet/alienor-back/utils"
-	"fmt"
 )
 
 
@@ -40,10 +39,12 @@ func TestHandleAuthSuccess(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 200, res.StatusCode)
 	// check jwt token
-	dec := json.NewDecoder(res.Body)
-	var authRes ctrl.AuthRes
-	dec.Decode(&authRes)
-	_, jwtError := jwt.Parse(authRes.Token, func(token *jwt.Token) (interface{}, error) {
+	assert.Len(t, res.Cookies(), 1)
+	cookie := res.Cookies()[0]
+	assert.True(t, cookie.HttpOnly)
+	assert.Equal(t, "ALIENOR_SESS", cookie.Name)
+	jwtToken := cookie.Value
+	_, jwtError := jwt.Parse(jwtToken, func(token *jwt.Token) (interface{}, error) {
 		_, ok := token.Method.(*jwt.SigningMethodHMAC)
 		assert.Equal(t, true, ok)
 		return []byte(utils.Secret), nil
@@ -91,18 +92,4 @@ func TestHandleUnknownUser(t *testing.T) {
 	// then
 	assert.Nil(t, err)
 	assert.Equal(t, 404, res.StatusCode)
-}
-
-func TestToto(t *testing.T) {
-	// given
-
-	pwd, _ := bcrypt.GenerateFromPassword([]byte("test"), bcrypt.DefaultCost)
-	hash := string(pwd)
-
-	fmt.Println(hash)
-
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte("test"))
-
-	assert.Nil(t, err)
-
 }

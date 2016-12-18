@@ -18,13 +18,13 @@ import (
 var (
 	CouchBaseAddr string = "127.0.0.1"
 	Cluster *gocb.Cluster
-	Bucket *gocb.Bucket
 	Secret string = "someSecret"
 )
 
 // initiate couchbase resources
 func Before() {
 	var err error
+	var Bucket *gocb.Bucket
 	Cluster, err = gocb.Connect("couchbase://" + CouchBaseAddr)
 	if err != nil {
 		panic(err)
@@ -63,7 +63,11 @@ func DoReqWithToken(url string, verb string, reader io.Reader, token string) (*h
 	req, _ := http.NewRequest(verb, url, reader)
 	req.Header.Set("Content-Type", "application/json")
 	if token != "" {
-		req.Header.Set("Authorization", "bearer " + token)
+		c := http.Cookie{}
+		c.Name = "ALIENOR_SESS"
+		c.HttpOnly = true
+		c.Value = token
+		req.AddCookie(&c)
 	}
 	// disable TSL cert chain because of httptest autosign cert
 	cli := http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify:true}}}
@@ -72,7 +76,7 @@ func DoReqWithToken(url string, verb string, reader io.Reader, token string) (*h
 
 // get one User
 func GetUser(identifier string) (*model.User) {
-	Bucket, _ = Cluster.OpenBucket("alienor", "")
+	Bucket, _ := Cluster.OpenBucket("alienor", "")
 	defer Bucket.Close()
 	usr := model.NewUser()
 	_, err := Bucket.Get("user:" + identifier, usr)
@@ -107,17 +111,17 @@ func PrepareUserWithTeam(teamName string, identifier string) *model.User {
 }
 
 func Populate(data map[string]interface{}) {
-	Bucket, _ = Cluster.OpenBucket("alienor", "")
-	defer Bucket.Close()
+	bucket, _ := Cluster.OpenBucket("alienor", "")
+	defer bucket.Close()
 	var items []gocb.BulkOp
 	for k, v := range data {
 		items = append(items, &gocb.UpsertOp{Key: k, Value: v})
 	}
-	doBulkOps(items)
+	doBulkOps(items, bucket)
 }
 
-func doBulkOps(items []gocb.BulkOp) {
-	err := Bucket.Do(items)
+func doBulkOps(items []gocb.BulkOp, bucket *gocb.Bucket) {
+	err := bucket.Do(items)
 	if err != nil {
 		panic(err)
 	}

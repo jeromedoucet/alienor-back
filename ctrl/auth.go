@@ -8,7 +8,6 @@ import (
 	"github.com/jeromedoucet/alienor-back/model"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
-	"strings"
 	"errors"
 	"time"
 )
@@ -37,7 +36,8 @@ func handleAuth(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(500)
 			return
 		}
-		writeJsonResponse(w, &AuthRes{Token:token}, 200)
+		writeSessionCookie(w, token)
+		w.WriteHeader(200)
 	}
 
 }
@@ -67,13 +67,23 @@ func checkUserCredential(r *http.Request) (usr *model.User, cError *ctrlError) {
 
 // create the token used for the newly created session
 func createJwtToken(usr *model.User) (token string, err error) {
-	// todo make the exp variable
+	// todo make the exp variable (and less than that !)
 	t := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub": usr.Id,
 		"exp": time.Now().Add(20 * time.Minute).Unix(),
 	})
 	token, err = t.SignedString(secret)
 	return
+}
+
+// write the session Cookie into the response
+func writeSessionCookie(w http.ResponseWriter, token string)  {
+	// todo check if not already created
+	c := http.Cookie{}
+	c.Name = "ALIENOR_SESS"
+	c.HttpOnly = true
+	c.Value = token
+	http.SetCookie(w , &c)
 }
 
 // init the auth component by registering auth enpoint on router
@@ -84,12 +94,17 @@ func initAuthEndPoint(router component.Router) {
 // this func will check the JWT token. If valid, a user is return
 // an error otherwise.
 func CheckToken(r *http.Request) (usr *model.User, err error) {
-	auth := r.Header.Get("Authorization")
-	if !strings.HasPrefix(auth, "bearer ") {
-		err = errors.New("no valid authorization token")
+	//auth := r.Header.Get("Authorization")
+	//if !strings.HasPrefix(auth, "bearer ") {
+	//	err = errors.New("no valid authorization token")
+	//	return
+	//}
+	var c *http.Cookie
+	c, err = r.Cookie("ALIENOR_SESS") // todo handle no cookie
+	if err != nil {
 		return
 	}
-	token, parsingError := jwt.Parse(string([]byte(auth)[7:]), keyFunc)
+	token, parsingError := jwt.Parse(string([]byte(c.Value)), keyFunc)
 
 	if parsingError != nil {
 		err = parsingError;

@@ -27,7 +27,12 @@ func TestIsLoggedWithSuccess(t *testing.T) {
 	})
 	tokenString, _ := token.SignedString(secret)
 	r := http.Request{Header:http.Header{}}
-	r.Header.Set("Authorization", "bearer " + tokenString)
+	// create session cookie
+	c := http.Cookie{}
+	c.Name = "ALIENOR_SESS"
+	c.HttpOnly = true
+	c.Value = tokenString
+	r.AddCookie(&c)
 	// when
 	unMarshaledUsr, err := CheckToken(&r)
 	assert.Nil(t, err)
@@ -45,7 +50,12 @@ func TestIsLoggedWithoutToken(t *testing.T) {
 func TestIsLoggedWithBadToken(t *testing.T) {
 	// given
 	r := http.Request{Header:http.Header{}}
-	r.Header.Set("Authorization", "bearer " + "aBadTokenYouSee?")
+	c := http.Cookie{}
+	// create session cookie
+	c.Name = "ALIENOR_SESS"
+	c.HttpOnly = true
+	c.Value = "aBadTokenYouSee?"
+	r.AddCookie(&c)
 	// when
 	_, err := CheckToken(&r)
 	assert.NotNil(t, err)
@@ -62,23 +72,12 @@ func TestIsLoggedWithExpiredToken(t *testing.T) {
 	})
 	tokenString, _ := token.SignedString(secret)
 	r := http.Request{Header:http.Header{}}
-	r.Header.Set("Authorization", "bearer " + tokenString)
-	// when
-	_, err := CheckToken(&r)
-	assert.NotNil(t, err)
-}
-
-func TestIsLoggedWithoutBearerPrefix(t *testing.T) {
-	// given
-	secret = []byte("some secret")
-	usr := model.User{Id: "leroy.jenkins", Type:model.USER}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": usr.Id,
-		"exp": time.Now().Add(60 * time.Second).Unix(),
-	})
-	tokenString, _ := token.SignedString(secret)
-	r := http.Request{Header:http.Header{}}
-	r.Header.Set("Authorization", tokenString)
+	// create session cookie
+	c := http.Cookie{}
+	c.Name = "ALIENOR_SESS"
+	c.HttpOnly = true
+	c.Value = tokenString
+	r.AddCookie(&c)
 	// when
 	_, err := CheckToken(&r)
 	assert.NotNil(t, err)
