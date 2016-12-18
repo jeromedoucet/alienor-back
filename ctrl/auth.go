@@ -78,7 +78,11 @@ func createJwtToken(usr *model.User) (token string, err error) {
 
 // write the session Cookie into the response
 func writeSessionCookie(w http.ResponseWriter, token string)  {
-	// todo check if not already created
+	/*
+	 * Assuming there is just one cookie for this app : the session one
+	 * means that it must be cleared before set a new one.
+	 */
+	w.Header().Del("Set-Cookie")
 	c := http.Cookie{}
 	c.Name = "ALIENOR_SESS"
 	c.HttpOnly = true
@@ -94,13 +98,8 @@ func initAuthEndPoint(router component.Router) {
 // this func will check the JWT token. If valid, a user is return
 // an error otherwise.
 func CheckToken(r *http.Request) (usr *model.User, err error) {
-	//auth := r.Header.Get("Authorization")
-	//if !strings.HasPrefix(auth, "bearer ") {
-	//	err = errors.New("no valid authorization token")
-	//	return
-	//}
 	var c *http.Cookie
-	c, err = r.Cookie("ALIENOR_SESS") // todo handle no cookie
+	c, err = r.Cookie("ALIENOR_SESS")
 	if err != nil {
 		return
 	}

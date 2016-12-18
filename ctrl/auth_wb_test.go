@@ -166,6 +166,45 @@ func TestCheckUserSuccessFul(t *testing.T) {
 	assert.Equal(t, "leroy.jenkins", usr.Id)
 }
 
+func TestWriteSessionCookieNominalCase(t *testing.T) {
+	// given
+	r := httptest.NewRecorder()
+	token := "some-token"
+
+	// when
+	writeSessionCookie(r, token)
+
+	// then
+	resp := http.Response{Header: r.Header()}
+	cookie := resp.Cookies()[0]
+	assert.Len(t, resp.Cookies(), 1)
+	assert.Equal(t, cookie.Name, "ALIENOR_SESS")
+	assert.Equal(t, cookie.Value, token)
+	assert.True(t, cookie.HttpOnly)
+}
+
+func TestWriteSessionCookieWhenPreviousCookiesShouldRefreshIt(t *testing.T) {
+	// given
+	r := httptest.NewRecorder()
+	token := "some-token"
+
+	c := http.Cookie{}
+	c.Name = "ALIENOR_SESS"
+	c.Value = "old-token"
+	http.SetCookie(r, &c)
+
+	// when
+	writeSessionCookie(r, token)
+
+	// then
+	resp := http.Response{Header: r.Header()}
+	cookie := resp.Cookies()[0]
+	assert.Len(t, resp.Cookies(), 1)
+	assert.Equal(t, cookie.Name, "ALIENOR_SESS")
+	assert.Equal(t, cookie.Value, token)
+	assert.True(t, cookie.HttpOnly)
+}
+
 /* ################################################################################################################## */
 /* ##############################################  BENCH  ########################################################### */
 /* ################################################################################################################## */
