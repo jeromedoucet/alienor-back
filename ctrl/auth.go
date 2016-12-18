@@ -70,7 +70,7 @@ func createJwtToken(usr *model.User) (token string, err error) {
 	// todo make the exp variable (and less than that !)
 	t := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub": usr.Id,
-		"exp": time.Now().Add(20 * time.Minute).Unix(),
+		"exp": time.Now().Add(1 * time.Minute).Unix(),
 	})
 	token, err = t.SignedString(secret)
 	return

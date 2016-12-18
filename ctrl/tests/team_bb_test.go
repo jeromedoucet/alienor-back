@@ -24,8 +24,10 @@ func TestTeamCreationSuccessFull(t *testing.T) {
 
 	body, _ := json.Marshal(teamCreationRequest)
 
+	// when
 	token := utils.CreateToken(usr)
 	res, err := utils.DoReqWithToken(s.URL + "/team", "POST", bytes.NewBuffer(body), token)
+
 	// then
 	assert.Nil(t, err)
 	assert.Equal(t, 201, res.StatusCode)
@@ -36,9 +38,29 @@ func TestTeamCreationSuccessFull(t *testing.T) {
 	assert.Equal(t, teamCreationRequest.Name, teamRes.Name)
 	// db check -- the connected user should now be one admin of the
 	actualUsr := utils.GetUser(usr.Id)
-	assert.Equal(t, 1, len(actualUsr.Roles))
+	assert.Len(t, actualUsr.Roles, 1)
 	assert.Equal(t, model.ADMIN, actualUsr.Roles[0].Value)
 	assert.Equal(t, teamCreationRequest.Name, actualUsr.Roles[0].Team.Name)
+}
+
+func TestTeamCreationWitoutBodyRequest(t *testing.T) {
+	// given
+	utils.Before()
+	// prepare existing user
+	usr := &model.User{Id: "leroy.jenkins", Type:model.USER}
+	utils.Populate(map[string]interface{}{"user:" + usr.Id: usr})
+
+	s := utils.StartHttp(func(r component.Router) {ctrl.InitEndPoints(r, utils.CouchBaseAddr, "", utils.Secret)})
+	defer s.Close()
+
+	// when
+	token := utils.CreateToken(usr)
+	res, err := utils.DoReqWithToken(s.URL + "/team", "POST", nil, token)
+
+	// then
+	assert.Nil(t, err)
+	assert.Equal(t, 401, res.StatusCode)
+
 }
 
 func TestTeamCreationWhenNotAuthenticated(t *testing.T) {
@@ -92,4 +114,64 @@ func TestTeamCreationWhenTeamAlreadyExist(t *testing.T) {
 	assert.Equal(t, 0, len(actualUsr.Roles))
 }
 
-//todo test redirection !
+func TestTeamEnumerationSuccessFull(t *testing.T) {
+	// given
+	utils.Before()
+	// prepare existing user with one team as Admin
+	team := model.NewTeam()
+	team.Name = "the A-team"
+	role := model.NewRole()
+	role.Value = model.ADMIN
+	role.Team = team
+	usr := &model.User{Id: "leroy.jenkins", Type:model.USER}
+	usr.Roles = []*model.Role{role}
+	utils.Populate(map[string]interface{}{"user:" + usr.Id: usr})
+
+	s := utils.StartHttp(func(r component.Router) {ctrl.InitEndPoints(r, utils.CouchBaseAddr, "", utils.Secret)})
+	defer s.Close()
+
+	// when
+	token := utils.CreateToken(usr)
+	res, err := utils.DoReqWithToken(s.URL + "/team", "GET", nil, token)
+
+	// then
+	assert.Nil(t, err)
+	assert.Equal(t, 200, res.StatusCode)
+	var teamsRes []model.Team
+	json.NewDecoder(res.Body).Decode(&teamsRes)
+
+	assert.Len(t, teamsRes, 1)
+	assert.Equal(t, teamsRes[0].Name, "the A-team")
+}
+
+func TestTeamEnumerationWhenUserDoesntExist(t *testing.T) {
+	// given
+	utils.Before()
+	// prepare existing user with one team as Admin
+	usr := &model.User{Id: "leroy.jenkins", Type:model.USER}
+
+	s := utils.StartHttp(func(r component.Router) {ctrl.InitEndPoints(r, utils.CouchBaseAddr, "", utils.Secret)})
+	defer s.Close()
+
+	// when
+	token := utils.CreateToken(usr)
+	res, err := utils.DoReqWithToken(s.URL + "/team", "GET", nil, token)
+
+	// then
+	assert.Nil(t, err)
+	assert.Equal(t, 404, res.StatusCode)
+}
+
+func TestTeamEnumerationWhenNotAuthenticated(t *testing.T) {
+	// given
+	utils.Before()
+	s := utils.StartHttp(func(r component.Router) {ctrl.InitEndPoints(r, utils.CouchBaseAddr, "", utils.Secret)})
+	defer s.Close()
+
+	// when
+	res, err := utils.DoReq(s.URL + "/team", "GET", nil)
+
+	// then
+	assert.Nil(t, err)
+	assert.Equal(t, 401, res.StatusCode)
+}

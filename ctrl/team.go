@@ -26,15 +26,27 @@ func handleTeam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	err = RefreshToken(w, principal)
-	// todo check the error
 	if err != nil {
 		w.WriteHeader(401)
 		return
 	}
+	switch r.Method {
+	case http.MethodPost:
+		createTeam(principal, w, r)
+	case http.MethodGet:
+		findTeam(principal, w)
+	}
+}
+
+// do create a new team if possible
+func createTeam(principal *model.User, w http.ResponseWriter, r *http.Request) {
 	dec := json.NewDecoder(r.Body)
 	var req TeamCreationReq
-	err = dec.Decode(&req)
-	// todo check err and test me !
+	err := dec.Decode(&req)
+	if err != nil {
+		writeError(w, &ctrlError{errorMsg:"#BadRequestBody", httpCode:401})
+		return
+	}
 
 	ctrlErr := checkTeamExist(&req)
 	if ctrlErr != nil {
@@ -45,7 +57,8 @@ func handleTeam(w http.ResponseWriter, r *http.Request) {
 	var cas gocb.Cas
 	usr := model.NewUser()
 	cas, err = userRepository.Get(principal.Id, usr)
-	if err != nil { // todo user nil ?? challenge me !
+	if err != nil {
+		// todo user nil ?? challenge me !
 		// todo test me
 		return
 	}
@@ -62,7 +75,22 @@ func handleTeam(w http.ResponseWriter, r *http.Request) {
 	writeJsonResponse(w, role.Team, 201)
 }
 
+func findTeam(principal *model.User, w http.ResponseWriter) {
+	_, err := userRepository.Get(principal.Id, principal)
+	if err != nil {
+		writeError(w, &ctrlError{errorMsg:"#UserNotFound", httpCode:404})
+		return
+	}
+	teams := make([]*model.Team, len(principal.Roles), len(principal.Roles))
+	for i, v := range principal.Roles {
+		teams[i] = v.Team
+	}
+	writeJsonResponse(w, teams, 200)
+}
+
+// check if a team already exist with this name
 func checkTeamExist(req *TeamCreationReq) *ctrlError {
+	// todo check that the name is not empty
 	exist, err := rep.TeamExist(req.Name, gocb.RequestPlus)
 	if err != nil {
 		return &ctrlError{httpCode:503, errorMsg:"Error during fetching data from the data store"}
