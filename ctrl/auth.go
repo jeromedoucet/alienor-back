@@ -120,6 +120,16 @@ func CheckToken(r *http.Request) (usr *model.User, err error) {
 	return
 }
 
+func RefreshToken(w http.ResponseWriter, usr *model.User) (err error) {
+	token, jwtError := createJwtToken(usr)
+	if jwtError != nil {
+		err = jwtError
+		return
+	}
+	writeSessionCookie(w, token)
+	return
+}
+
 // function which provide the secret
 func keyFunc(token *jwt.Token) (interface{}, error) {
 	if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {

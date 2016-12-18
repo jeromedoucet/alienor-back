@@ -25,6 +25,12 @@ func handleTeam(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(401)
 		return
 	}
+	err = RefreshToken(w, principal)
+	// todo check the error
+	if err != nil {
+		w.WriteHeader(401)
+		return
+	}
 	dec := json.NewDecoder(r.Body)
 	var req TeamCreationReq
 	err = dec.Decode(&req)
