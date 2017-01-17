@@ -120,6 +120,7 @@ func CheckToken(r *http.Request) (usr *model.User, err error) {
 	return
 }
 
+// refresh the Jwt token
 func RefreshToken(w http.ResponseWriter, usr *model.User) (err error) {
 	token, jwtError := createJwtToken(usr)
 	if jwtError != nil {

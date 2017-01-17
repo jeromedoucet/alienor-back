@@ -19,7 +19,6 @@ func handleUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// todo test me unit style !
 // create a user using the request. Return an ctrlError if
 // on issue
 func doCreateUser(r *http.Request) (usr *model.User, cError *ctrlError) {
@@ -30,20 +29,17 @@ func doCreateUser(r *http.Request) (usr *model.User, cError *ctrlError) {
 		cError = &ctrlError{httpCode:400, errorMsg:"Error during decoding the user creation request body"}
 		return
 	}
-	if checkField(usr) != nil {
-		cError = &ctrlError{httpCode:400, errorMsg:`Error during parsing the user creation request body
-		 : there is missing fields`}
+	if fieldErr := checkField(usr); fieldErr != nil {
+		cError = &ctrlError{httpCode:400, errorMsg:fieldErr.Error()}
 		return
 	}
 	err = userRepository.Insert(usr)
 	if err != nil {
-		cError = &ctrlError{httpCode:409, errorMsg:`Error during creating a new user
-		 : user already exist`}
+		cError = &ctrlError{httpCode:409, errorMsg:"Error during creating a new user : user already exist"}
 	}
 	return
 }
 
-// todo test me unit style !
 // check the user fields
 func checkField(usr *model.User) error {
 	if usr.Id == "" {
