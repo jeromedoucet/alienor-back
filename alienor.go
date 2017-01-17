@@ -31,16 +31,6 @@ type httpFilter struct {
 
 // todo test me !
 func (f *httpFilter) ServeHTTP(res http.ResponseWriter, req *http.Request) {
-	// the CORS request are here allowed
-	//if origin := req.Header.Get("Origin"); origin != "" {
-	//	res.Header().Set("Access-Control-Allow-Origin", origin)
-	//	res.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-	//	res.Header().Set("Access-Control-Allow-Headers",
-	//		"Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
-	//}
-	//if req.Method == "OPTIONS" {
-	//	return
-	//}
 	f.mux.ServeHTTP(res, req)
 }
 
