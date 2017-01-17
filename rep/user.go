@@ -20,7 +20,6 @@ func (UserRepository) Get(identifier string, document model.Document) (gocb.Cas,
 	return bucket.Get(string(model.USER) + ":" + identifier, user)
 }
 
-// todo test me
 func (UserRepository) Insert(document model.Document) (err error) {
 	user, isUser := document.(*model.User)
 	if !isUser {

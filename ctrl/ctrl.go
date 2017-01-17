@@ -40,7 +40,7 @@ func writeError(w http.ResponseWriter, err *ctrlError) {
 }
 
 // write an arbitrary response on the writer with the desired http code
-// todo test me + handle the marshall err !
+// todo handle the marshall err !
 func writeJsonResponse(w http.ResponseWriter, data interface{}, code int) {
 	body, _ := json.Marshal(data)
 	w.Header().Set("Content-Type", "application/json")
