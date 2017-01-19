@@ -13,6 +13,20 @@ var (
 	itemRepository rep.Repository = new(rep.ItemRepository)
 )
 
+type AuthFilter struct {
+	HandleBusiness func (w http.ResponseWriter, r *http.Request)
+}
+
+func (a *AuthFilter) HandleAuth(w http.ResponseWriter, r *http.Request)  {
+	_, err :=CheckToken(r)
+	if err != nil {
+		writeError(w, &ctrlError{httpCode:401, errorMsg:"Not authenticated"})
+		return
+	} else {
+		a.HandleBusiness(w, r)
+	}
+}
+
 type ctrlError struct {
 	httpCode int
 	errorMsg string

@@ -22,5 +22,6 @@ func handleItem(w http.ResponseWriter, r *http.Request) {
 }
 
 func initItemEndPoint(router component.Router) {
-	router.HandleFunc(ITEM_ENDPOINT, handleItem)
+	authFilter := &AuthFilter{HandleBusiness:handleItem}
+	router.HandleFunc(ITEM_ENDPOINT, authFilter.HandleAuth)
 }
