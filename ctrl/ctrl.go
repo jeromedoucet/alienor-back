@@ -10,6 +10,7 @@ import (
 
 var (
 	userRepository rep.Repository = new(rep.UserRepository)
+	itemRepository rep.Repository = new(rep.ItemRepository)
 )
 
 type ctrlError struct {
@@ -32,6 +33,7 @@ func InitEndPoints(router component.Router, couchBaseAddr string, bucketPwd stri
 	initAuthEndPoint(router)
 	initUserEndPoint(router)
 	initTeamEndPoint(router)
+	initItemEndPoint(router)
 }
 
 // write the error directly on the given response writer

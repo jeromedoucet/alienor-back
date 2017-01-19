@@ -86,6 +86,18 @@ func GetUser(identifier string) (*model.User) {
 	return usr
 }
 
+// get one User
+func GetItem(itemId, teamId string) (*model.Item) {
+	Bucket, _ := Cluster.OpenBucket("alienor", "")
+	defer Bucket.Close()
+	item := model.NewItem()
+	_, err := Bucket.Get(string(model.ITEM) + ":" + teamId + ":" + itemId, item)
+	if err != nil {
+		panic(err)
+	}
+	return item
+}
+
 func CreateToken(usr *model.User) (token string) {
 	var err error
 	t := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{

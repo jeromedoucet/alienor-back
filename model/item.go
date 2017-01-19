@@ -15,4 +15,12 @@ type Item struct {
 	Values map [string]string `json:"values"`
 }
 
+func NewItem() *Item {
+	i := Item{State:Newly, Type:ITEM}
+	return &i
+}
+
+func (i *Item) Identifier() string {
+	return i.Id
+}
 
