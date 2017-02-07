@@ -3,14 +3,12 @@ package ctrl
 import (
 	"testing"
 	"github.com/jeromedoucet/alienor-back/test"
-	"github.com/stretchr/testify/assert"
 	"encoding/json"
 )
 
-
 func TestWriteError(t *testing.T) {
 	// given
-	ctrlErr := &ctrlError{errorMsg:"some error message", httpCode:500}
+	ctrlErr := &ctrlError{errorMsg: "some error message", httpCode: 500}
 	writer := &test.HttpWriterMock{}
 	writer.Head = make(map[string][]string)
 
@@ -20,7 +18,11 @@ func TestWriteError(t *testing.T) {
 	// then
 	var errMsg ErrorBody
 	json.Unmarshal(writer.Data, &errMsg)
-	assert.Equal(t, "application/json", writer.Header().Get("Content-Type"))
-	assert.Equal(t, "some error message", errMsg.Msg)
-	assert.Equal(t, 500, writer.Code)
+	if writer.Header().Get("Content-Type") != "application/json" {
+		t.Error("Bad content type")
+	} else if errMsg.Msg != "some error message" {
+		t.Error("Bad error message")
+	} else if writer.Code != 500 {
+		t.Error("bad http code")
+	}
 }

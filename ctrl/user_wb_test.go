@@ -3,23 +3,27 @@ package ctrl
 import (
 	"testing"
 	"github.com/jeromedoucet/alienor-back/model"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestCheckFieldShouldCheckIdFirst(t *testing.T) {
 	// given
+	t.Parallel()
 	usr := model.NewUser()
 
 	// when
 	err := checkField(usr)
 
 	// then
-	assert.NotNil(t, err)
-	assert.Equal(t, "invalid identifier", err.Error())
+	if err == nil {
+		t.Error("expected err not to be nil")
+	} else if err.Error() != "invalid identifier" {
+		t.Error("Bad error message")
+	}
 }
 
 func TestCheckFieldShouldCheckForNameInSecondPlace(t *testing.T) {
 	// given
+	t.Parallel()
 	usr := model.NewUser()
 	usr.Id = "illidan.stormrage"
 
@@ -27,12 +31,16 @@ func TestCheckFieldShouldCheckForNameInSecondPlace(t *testing.T) {
 	err := checkField(usr)
 
 	// then
-	assert.NotNil(t, err)
-	assert.Equal(t, "invalid forname", err.Error())
+	if err == nil {
+		t.Error("expected error not to be nil")
+	} else if err.Error() != "invalid forname" {
+		t.Error("Bad error message")
+	}
 }
 
 func TestCheckFieldShouldCheckNameInThirdPlace(t *testing.T) {
 	// given
+	t.Parallel()
 	usr := model.NewUser()
 	usr.Id = "illidan.stormrage"
 	usr.ForName = "illidan"
@@ -41,12 +49,16 @@ func TestCheckFieldShouldCheckNameInThirdPlace(t *testing.T) {
 	err := checkField(usr)
 
 	// then
-	assert.NotNil(t, err)
-	assert.Equal(t, "invalid name", err.Error())
+	if err == nil {
+		t.Error("expected error not to be nil")
+	} else if err.Error() != "invalid name" {
+		t.Error("Bad error message")
+	}
 }
 
 func TestCheckFieldShouldCheckEmailInFourthPlace(t *testing.T) {
 	// given
+	t.Parallel()
 	usr := model.NewUser()
 	usr.Id = "illidan.stormrage"
 	usr.ForName = "illidan"
@@ -56,12 +68,16 @@ func TestCheckFieldShouldCheckEmailInFourthPlace(t *testing.T) {
 	err := checkField(usr)
 
 	// then
-	assert.NotNil(t, err)
-	assert.Equal(t, "invalid email", err.Error())
+	if err == nil {
+		t.Error("expected error not to be nil")
+	} else if err.Error() != "invalid email" {
+		t.Error("Bad Error message")
+	}
 }
 
 func TestCheckFieldShouldCheckPasswordInFifthPlace(t *testing.T) {
 	// given
+	t.Parallel()
 	usr := model.NewUser()
 	usr.Id = "illidan.stormrage"
 	usr.ForName = "illidan"
@@ -72,12 +88,16 @@ func TestCheckFieldShouldCheckPasswordInFifthPlace(t *testing.T) {
 	err := checkField(usr)
 
 	// then
-	assert.NotNil(t, err)
-	assert.Equal(t, "invalid password", err.Error())
+	if err == nil {
+		t.Error("expected error not to be nil")
+	} else if err.Error() != "invalid password" {
+		t.Error("Bad Error message")
+	}
 }
 
 func TestCheckFieldShouldPassCheck(t *testing.T) {
 	// given
+	t.Parallel()
 	usr := model.NewUser()
 	usr.Id = "illidan.stormrage"
 	usr.ForName = "illidan"
@@ -88,5 +108,7 @@ func TestCheckFieldShouldPassCheck(t *testing.T) {
 	err := checkField(usr)
 
 	// then
-	assert.Nil(t, err)
+	if err != nil {
+		t.Error("expected error to be nil")
+	}
 }
