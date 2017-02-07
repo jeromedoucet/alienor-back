@@ -2,7 +2,7 @@ package rep_test
 
 import (
 	"testing"
-	"github.com/jeromedoucet/alienor-back/utils"
+	"github.com/jeromedoucet/alienor-back/test"
 	"github.com/jeromedoucet/alienor-back/model"
 	"github.com/jeromedoucet/alienor-back/rep"
 	"github.com/stretchr/testify/assert"
@@ -10,7 +10,7 @@ import (
 
 func TestGetUserShouldUserWithSuccess(t *testing.T) {
 	// given
-	utils.Before()
+	test.Before()
 	usr := model.User{Id:"leroy.jenkins",
 		Type:model.USER,
 		ForName:"Leroy",
@@ -18,8 +18,8 @@ func TestGetUserShouldUserWithSuccess(t *testing.T) {
 		Email:"leroy.jenkins@wipe-guild.org",
 		Password:"wipe",
 	}
-	utils.Populate(map[string]interface{}{"user:" + usr.Id: usr})
-	rep.InitRepo(utils.CouchBaseAddr, "")
+	test.Populate(map[string]interface{}{"user:" + usr.Id: usr})
+	rep.InitRepo(test.CouchBaseAddr, "")
 	actualUser := model.NewUser()
 	userRepository := new(rep.UserRepository)
 	// when
@@ -36,8 +36,8 @@ func TestGetUserShouldUserWithSuccess(t *testing.T) {
 
 func TestGetUserShouldUserWithError(t *testing.T) {
 	// given
-	utils.Before()
-	rep.InitRepo(utils.CouchBaseAddr, "")
+	test.Before()
+	rep.InitRepo(test.CouchBaseAddr, "")
 	actualUser := model.NewUser()
 	userRepository := new(rep.UserRepository)
 
@@ -50,11 +50,11 @@ func TestGetUserShouldUserWithError(t *testing.T) {
 
 func TestInsertANonUserEntity(t *testing.T) {
 	// given
-	utils.Before()
+	test.Before()
 	userRepository := new(rep.UserRepository)
 
 	// when
-	err := userRepository.Insert(&utils.MockDocument{Id:"someId"})
+	err := userRepository.Insert(&test.MockDocument{Id: "someId"})
 
 	// then
 	assert.NotNil(t, err)
@@ -63,8 +63,8 @@ func TestInsertANonUserEntity(t *testing.T) {
 
 func TestInsertUserWithoutPwd(t *testing.T) {
 	// given
-	utils.Before()
-	rep.InitRepo(utils.CouchBaseAddr, "")
+	test.Before()
+	rep.InitRepo(test.CouchBaseAddr, "")
 	userRepository := new(rep.UserRepository)
 	usr := &model.User{Id:"leroy.jenkins",
 		Type:model.USER,

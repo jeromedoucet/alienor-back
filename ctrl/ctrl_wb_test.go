@@ -2,7 +2,7 @@ package ctrl
 
 import (
 	"testing"
-	"github.com/jeromedoucet/alienor-back/utils"
+	"github.com/jeromedoucet/alienor-back/test"
 	"github.com/stretchr/testify/assert"
 	"encoding/json"
 )
@@ -11,7 +11,7 @@ import (
 func TestWriteError(t *testing.T) {
 	// given
 	ctrlErr := &ctrlError{errorMsg:"some error message", httpCode:500}
-	writer := &utils.HttpWriterMock{}
+	writer := &test.HttpWriterMock{}
 	writer.Head = make(map[string][]string)
 
 	// when

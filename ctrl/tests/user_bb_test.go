@@ -8,14 +8,14 @@ import (
 	"encoding/json"
 	"bytes"
 	"github.com/stretchr/testify/assert"
-	"github.com/jeromedoucet/alienor-back/utils"
+	"github.com/jeromedoucet/alienor-back/test"
 	"golang.org/x/crypto/bcrypt"
 )
 
 // nominal user creation test case
 func TestUserCreationSuccessful(t *testing.T) {
 	// given
-	utils.Before()
+	test.Before()
 	usr := model.User{Id:"leroy.jenkins",
 		Type:model.USER,
 		ForName:"Leroy",
@@ -24,14 +24,14 @@ func TestUserCreationSuccessful(t *testing.T) {
 		Password:"wipe",
 	}
 
-	s := utils.StartHttp(func(r component.Router) {
-		ctrl.InitEndPoints(r, utils.CouchBaseAddr, "", utils.Secret)
+	s := test.StartHttp(func(r component.Router) {
+		ctrl.InitEndPoints(r, test.CouchBaseAddr, "", test.Secret)
 	})
 	defer s.Close()
 	body, _ := json.Marshal(usr)
 
 	// when
-	res, err := utils.DoReq(s.URL + "/user", "POST", bytes.NewBuffer(body))
+	res, err := test.DoReq(s.URL + "/user", "POST", bytes.NewBuffer(body))
 
 	// then
 	assert.Nil(t, err)
@@ -46,7 +46,7 @@ func TestUserCreationSuccessful(t *testing.T) {
 	assert.Equal(t, usr.ForName, userRes.ForName)
 	assert.Equal(t, usr.Name, userRes.Name)
 	// check db
-	actualUser := utils.GetUser(usr.Id)
+	actualUser := test.GetUser(usr.Id)
 	assert.Equal(t, usr.Email, actualUser.Email)
 	assert.Equal(t, usr.ForName, actualUser.ForName)
 	assert.Equal(t, usr.Name, actualUser.Name)
@@ -55,15 +55,15 @@ func TestUserCreationSuccessful(t *testing.T) {
 
 func TestUserCreationMalFormedJson(t *testing.T) {
 	// given
-	utils.Before()
-	s := utils.StartHttp(func(r component.Router) {
-		ctrl.InitEndPoints(r, utils.CouchBaseAddr, "", utils.Secret)
+	test.Before()
+	s := test.StartHttp(func(r component.Router) {
+		ctrl.InitEndPoints(r, test.CouchBaseAddr, "", test.Secret)
 	})
 	defer s.Close()
 	body := []byte("a malformed json")
 
 	// when
-	res, err := utils.DoReq(s.URL + "/user", "POST", bytes.NewBuffer(body))
+	res, err := test.DoReq(s.URL + "/user", "POST", bytes.NewBuffer(body))
 	var resBody ctrl.ErrorBody
 	json.NewDecoder(res.Body).Decode(&resBody)
 
@@ -76,23 +76,23 @@ func TestUserCreationMalFormedJson(t *testing.T) {
 // already used identifier
 func TestUserCreationExistingIdentifier(t *testing.T) {
 	// given
-	utils.Before()
+	test.Before()
 	usr := model.User{Id:"leroy.jenkins",
 		ForName:"Leroy",
 		Name:"Jenkins",
 		Email:"leroy.jenkins@wipe-guild.org",
 		Password:"wipe",
 	}
-	utils.Populate(map[string]interface{}{"user:" + usr.Id: model.User{Id:usr.Id}})
+	test.Populate(map[string]interface{}{"user:" + usr.Id: model.User{Id: usr.Id}})
 
-	s := utils.StartHttp(func(r component.Router) {
-		ctrl.InitEndPoints(r, utils.CouchBaseAddr, "", utils.Secret)
+	s := test.StartHttp(func(r component.Router) {
+		ctrl.InitEndPoints(r, test.CouchBaseAddr, "", test.Secret)
 	})
 	defer s.Close()
 	body, _ := json.Marshal(usr)
 
 	// when
-	res, err := utils.DoReq(s.URL + "/user", "POST", bytes.NewBuffer(body))
+	res, err := test.DoReq(s.URL + "/user", "POST", bytes.NewBuffer(body))
 	var resBody ctrl.ErrorBody
 	json.NewDecoder(res.Body).Decode(&resBody)
 
@@ -105,21 +105,21 @@ func TestUserCreationExistingIdentifier(t *testing.T) {
 // when Identifier is missing
 func TestUserCreationMissingIdentifier(t *testing.T) {
 	// given
-	utils.Before()
+	test.Before()
 	usr := model.User{ForName:"Leroy",
 		Name:"Jenkins",
 		Email:"leroy.jenkins@wipe-guild.org",
 		Password:"wipe",
 	}
 
-	s := utils.StartHttp(func(r component.Router) {
-		ctrl.InitEndPoints(r, utils.CouchBaseAddr, "", utils.Secret)
+	s := test.StartHttp(func(r component.Router) {
+		ctrl.InitEndPoints(r, test.CouchBaseAddr, "", test.Secret)
 	})
 	defer s.Close()
 	body, _ := json.Marshal(usr)
 
 	// when
-	res, err := utils.DoReq(s.URL + "/user", "POST", bytes.NewBuffer(body))
+	res, err := test.DoReq(s.URL + "/user", "POST", bytes.NewBuffer(body))
 	var resBody ctrl.ErrorBody
 	json.NewDecoder(res.Body).Decode(&resBody)
 
@@ -132,21 +132,21 @@ func TestUserCreationMissingIdentifier(t *testing.T) {
 // when ForName is missing
 func TestUserCreationMissingForName(t *testing.T) {
 	// given
-	utils.Before()
+	test.Before()
 	usr := model.User{Id:"leroy.jenkins",
 		Name:"Jenkins",
 		Email:"leroy.jenkins@wipe-guild.org",
 		Password:"wipe",
 	}
 
-	s := utils.StartHttp(func(r component.Router) {
-		ctrl.InitEndPoints(r, utils.CouchBaseAddr, "", utils.Secret)
+	s := test.StartHttp(func(r component.Router) {
+		ctrl.InitEndPoints(r, test.CouchBaseAddr, "", test.Secret)
 	})
 	defer s.Close()
 	body, _ := json.Marshal(usr)
 
 	// when
-	res, err := utils.DoReq(s.URL + "/user", "POST", bytes.NewBuffer(body))
+	res, err := test.DoReq(s.URL + "/user", "POST", bytes.NewBuffer(body))
 	var resBody ctrl.ErrorBody
 	json.NewDecoder(res.Body).Decode(&resBody)
 
@@ -159,21 +159,21 @@ func TestUserCreationMissingForName(t *testing.T) {
 // when forName is missing
 func TestUserCreationMissingName(t *testing.T) {
 	// given
-	utils.Before()
+	test.Before()
 	usr := model.User{Id:"leroy.jenkins",
 		ForName:"Leroy",
 		Email:"leroy.jenkins@wipe-guild.org",
 		Password:"wipe",
 	}
 
-	s := utils.StartHttp(func(r component.Router) {
-		ctrl.InitEndPoints(r, utils.CouchBaseAddr, "", utils.Secret)
+	s := test.StartHttp(func(r component.Router) {
+		ctrl.InitEndPoints(r, test.CouchBaseAddr, "", test.Secret)
 	})
 	defer s.Close()
 	body, _ := json.Marshal(usr)
 
 	// when
-	res, err := utils.DoReq(s.URL + "/user", "POST", bytes.NewBuffer(body))
+	res, err := test.DoReq(s.URL + "/user", "POST", bytes.NewBuffer(body))
 	var resBody ctrl.ErrorBody
 	json.NewDecoder(res.Body).Decode(&resBody)
 
@@ -186,21 +186,21 @@ func TestUserCreationMissingName(t *testing.T) {
 // when email is missing
 func TestUserCreationMissingEmail(t *testing.T) {
 	// given
-	utils.Before()
+	test.Before()
 	usr := model.User{Id:"leroy.jenkins",
 		ForName:"Leroy",
 		Name:"Jenkins",
 		Password:"wipe",
 	}
 
-	s := utils.StartHttp(func(r component.Router) {
-		ctrl.InitEndPoints(r, utils.CouchBaseAddr, "", utils.Secret)
+	s := test.StartHttp(func(r component.Router) {
+		ctrl.InitEndPoints(r, test.CouchBaseAddr, "", test.Secret)
 	})
 	defer s.Close()
 	body, _ := json.Marshal(usr)
 
 	// when
-	res, err := utils.DoReq(s.URL + "/user", "POST", bytes.NewBuffer(body))
+	res, err := test.DoReq(s.URL + "/user", "POST", bytes.NewBuffer(body))
 	var resBody ctrl.ErrorBody
 	json.NewDecoder(res.Body).Decode(&resBody)
 
@@ -213,21 +213,21 @@ func TestUserCreationMissingEmail(t *testing.T) {
 // when password is missing
 func TestUserCreationMissingPassword(t *testing.T) {
 	// given
-	utils.Before()
+	test.Before()
 	usr := model.User{Id:"leroy.jenkins",
 		ForName:"Leroy",
 		Name:"Jenkins",
 		Email:"leroy.jenkins@wipe-guild.org",
 	}
 
-	s := utils.StartHttp(func(r component.Router) {
-		ctrl.InitEndPoints(r, utils.CouchBaseAddr, "", utils.Secret)
+	s := test.StartHttp(func(r component.Router) {
+		ctrl.InitEndPoints(r, test.CouchBaseAddr, "", test.Secret)
 	})
 	defer s.Close()
 	body, _ := json.Marshal(usr)
 
 	// when
-	res, err := utils.DoReq(s.URL + "/user", "POST", bytes.NewBuffer(body))
+	res, err := test.DoReq(s.URL + "/user", "POST", bytes.NewBuffer(body))
 	var resBody ctrl.ErrorBody
 	json.NewDecoder(res.Body).Decode(&resBody)
 

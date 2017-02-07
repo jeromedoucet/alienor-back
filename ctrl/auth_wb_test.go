@@ -1,7 +1,6 @@
 package ctrl
 
 import (
-	"github.com/stretchr/testify/assert"
 	"time"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/jeromedoucet/alienor-back/model"
@@ -10,7 +9,7 @@ import (
 	"bytes"
 	"net/http/httptest"
 	"encoding/json"
-	"github.com/jeromedoucet/alienor-back/utils"
+	"github.com/jeromedoucet/alienor-back/test"
 	"github.com/couchbase/gocb"
 	"errors"
 	"github.com/jeromedoucet/alienor-back/rep"
@@ -19,14 +18,15 @@ import (
 
 func TestIsLoggedWithSuccess(t *testing.T) {
 	// given
+	t.Parallel()
 	secret = []byte("some secret")
-	usr := model.User{Id: "leroy.jenkins", Type:model.USER}
+	usr := model.User{Id: "leroy.jenkins", Type: model.USER}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub": usr.Id,
 		"exp": time.Now().Add(60 * time.Second).Unix(),
 	})
 	tokenString, _ := token.SignedString(secret)
-	r := http.Request{Header:http.Header{}}
+	r := http.Request{Header: http.Header{}}
 	// create session cookie
 	c := http.Cookie{}
 	c.Name = "ALIENOR_SESS"
@@ -35,21 +35,31 @@ func TestIsLoggedWithSuccess(t *testing.T) {
 	r.AddCookie(&c)
 	// when
 	unMarshaledUsr, err := CheckToken(&r)
-	assert.Nil(t, err)
-	assert.Equal(t, usr.Id, unMarshaledUsr.Id)
+
+	// then
+	if err != nil {
+		t.Error("expect the error to be nil")
+	} else if usr.Id != unMarshaledUsr.Id {
+		t.Error("expect the unmarshalled usr id to equal the original one")
+	}
 }
 
 func TestIsLoggedWithoutToken(t *testing.T) {
 	// given
-	r := http.Request{Header:http.Header{}}
+	t.Parallel()
+	r := http.Request{Header: http.Header{}}
 	// when
 	_, err := CheckToken(&r)
-	assert.NotNil(t, err)
+	// then
+	if err == nil {
+		t.Error("expect the error not to be nil")
+	}
 }
 
 func TestIsLoggedWithBadToken(t *testing.T) {
 	// given
-	r := http.Request{Header:http.Header{}}
+	t.Parallel()
+	r := http.Request{Header: http.Header{}}
 	c := http.Cookie{}
 	// create session cookie
 	c.Name = "ALIENOR_SESS"
@@ -58,20 +68,24 @@ func TestIsLoggedWithBadToken(t *testing.T) {
 	r.AddCookie(&c)
 	// when
 	_, err := CheckToken(&r)
-	assert.NotNil(t, err)
+	// then
+	if err == nil {
+		t.Error("expect the error not to be nil")
+	}
 }
 
 func TestIsLoggedWithExpiredToken(t *testing.T) {
 	// given
+	t.Parallel()
 	secret = []byte("some secret")
 
-	usr := model.User{Id: "leroy.jenkins", Type:model.USER}
+	usr := model.User{Id: "leroy.jenkins", Type: model.USER}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub": usr.Id,
 		"exp": time.Now().Add(-60 * time.Second).Unix(),
 	})
 	tokenString, _ := token.SignedString(secret)
-	r := http.Request{Header:http.Header{}}
+	r := http.Request{Header: http.Header{}}
 	// create session cookie
 	c := http.Cookie{}
 	c.Name = "ALIENOR_SESS"
@@ -80,32 +94,41 @@ func TestIsLoggedWithExpiredToken(t *testing.T) {
 	r.AddCookie(&c)
 	// when
 	_, err := CheckToken(&r)
-	assert.NotNil(t, err)
+	// then
+	if err == nil {
+		t.Error("expect the error not to be nil")
+	}
 }
 
 func TestCheckUserCredentialBadRequestBody(t *testing.T) {
 	// given
+	t.Parallel()
 	req := httptest.NewRequest("POST", "http://127.0.0.1:8080", bytes.NewBufferString("some string"))
 
 	// when
 	usr, err := checkUserCredential(req)
 
 	// then
-	assert.Nil(t, usr)
-	assert.NotNil(t, err)
-	assert.Equal(t, 400, err.httpCode)
-	assert.Equal(t, "Error during decoding the authentication request body", err.errorMsg)
+	if usr != nil {
+		t.Error("expect the user to be nil")
+	} else if err == nil {
+		t.Error("expect the error not to be nil")
+	} else if err.httpCode != 400 {
+		t.Error("expect http return code to equals 400")
+	} else if err.errorMsg != "Error during decoding the authentication request body" {
+		t.Error("bad error message")
+	}
 }
 
 func TestCheckUserUnknownUser(t *testing.T) {
 	// given
-	userInReq := model.User{Id: "leroy.jenkins", Type:model.USER}
+	userInReq := model.User{Id: "leroy.jenkins", Type: model.USER}
 	body, _ := json.Marshal(userInReq)
 	req := httptest.NewRequest("POST", "http://127.0.0.1:8080", bytes.NewBuffer(body))
 	defer func() {
 		userRepository = new(rep.UserRepository) // reset userRepository
 	}()
-	userRepository = &utils.RepositoryHeader{DoGet:func(identifier string,document model.Document) (gocb.Cas, error) {
+	userRepository = &test.RepositoryHeader{DoGet: func(identifier string, document model.Document) (gocb.Cas, error) {
 		return 0, errors.New("some error")
 	}}
 
@@ -113,9 +136,13 @@ func TestCheckUserUnknownUser(t *testing.T) {
 	_, err := checkUserCredential(req)
 
 	// then
-	assert.NotNil(t, err)
-	assert.Equal(t, 404, err.httpCode)
-	assert.Equal(t, "Unknow User", err.errorMsg)
+	if err == nil {
+		t.Error("expect the error not to be nil")
+	} else if err.httpCode != 404 {
+		t.Error("expect http return code to equals 404")
+	} else if err.errorMsg != "Unknow User" {
+		t.Error("bad error message")
+	}
 }
 
 func TestCheckUserBadPassword(t *testing.T) {
@@ -126,7 +153,7 @@ func TestCheckUserBadPassword(t *testing.T) {
 	defer func() {
 		userRepository = new(rep.UserRepository) // reset userRepository
 	}()
-	userRepository = &utils.RepositoryHeader{DoGet:func(identifier string, document model.Document) (gocb.Cas, error) {
+	userRepository = &test.RepositoryHeader{DoGet: func(identifier string, document model.Document) (gocb.Cas, error) {
 		userInRepo := document.(*model.User)
 		userInRepo.Password = "roxxor"
 		return 0, nil
@@ -136,20 +163,25 @@ func TestCheckUserBadPassword(t *testing.T) {
 	_, err := checkUserCredential(req)
 
 	// then
-	assert.NotNil(t, err)
-	assert.Equal(t, 400, err.httpCode)
-	assert.Equal(t, "Bad credentials", err.errorMsg)
+	if err == nil {
+		t.Error("expect the error not to be nil")
+	} else if err.httpCode != 400 {
+		t.Error("expect http return code to equals 404")
+	} else if err.errorMsg != "Bad credentials" {
+		t.Error("bad error message")
+	}
 }
 
 func TestCheckUserSuccessFul(t *testing.T) {
 	// given
+	t.Parallel()
 	userInReq := AuthReq{Login: "leroy.jenkins", Pwd: "wipe"}
 	body, _ := json.Marshal(userInReq)
 	req := httptest.NewRequest("POST", "http://127.0.0.1:8080", bytes.NewBuffer(body))
 	defer func() {
 		userRepository = new(rep.UserRepository) // reset userRepository
 	}()
-	userRepository = &utils.RepositoryHeader{DoGet:func(identifier string, document model.Document) (gocb.Cas, error) {
+	userRepository = &test.RepositoryHeader{DoGet: func(identifier string, document model.Document) (gocb.Cas, error) {
 		pwd, _ := bcrypt.GenerateFromPassword([]byte("wipe"), bcrypt.DefaultCost)
 		userInRepo := document.(*model.User)
 		userInRepo.Password = string(pwd)
@@ -161,13 +193,18 @@ func TestCheckUserSuccessFul(t *testing.T) {
 	usr, err := checkUserCredential(req)
 
 	// then
-	assert.Nil(t, err)
-	assert.NotNil(t, usr)
-	assert.Equal(t, "leroy.jenkins", usr.Id)
+	if err != nil {
+		t.Error("expect the error to be nil")
+	} else if usr == nil {
+		t.Error("expect the user not to be nil")
+	} else if usr.Id != userInReq.Login {
+		t.Error("expect the user id to eqauls the request login")
+	}
 }
 
 func TestWriteSessionCookieNominalCase(t *testing.T) {
 	// given
+	t.Parallel()
 	r := httptest.NewRecorder()
 	token := "some-token"
 
@@ -177,14 +214,21 @@ func TestWriteSessionCookieNominalCase(t *testing.T) {
 	// then
 	resp := http.Response{Header: r.Header()}
 	cookie := resp.Cookies()[0]
-	assert.Len(t, resp.Cookies(), 1)
-	assert.Equal(t, cookie.Name, "ALIENOR_SESS")
-	assert.Equal(t, cookie.Value, token)
-	assert.True(t, cookie.HttpOnly)
+
+	if len(resp.Cookies()) != 1 {
+		t.Error("expect to have only one cookie")
+	} else if cookie.Name != "ALIENOR_SESS" {
+		t.Error("bad cookie name")
+	} else if cookie.Value != token {
+		t.Error("bad cookie value")
+	} else if !cookie.HttpOnly {
+		t.Error("expect cookie in http only")
+	}
 }
 
 func TestWriteSessionCookieWhenPreviousCookiesShouldRefreshIt(t *testing.T) {
 	// given
+	t.Parallel()
 	r := httptest.NewRecorder()
 	token := "some-token"
 
@@ -199,10 +243,15 @@ func TestWriteSessionCookieWhenPreviousCookiesShouldRefreshIt(t *testing.T) {
 	// then
 	resp := http.Response{Header: r.Header()}
 	cookie := resp.Cookies()[0]
-	assert.Len(t, resp.Cookies(), 1)
-	assert.Equal(t, cookie.Name, "ALIENOR_SESS")
-	assert.Equal(t, cookie.Value, token)
-	assert.True(t, cookie.HttpOnly)
+	if len(resp.Cookies()) != 1 {
+		t.Error("expect to have only one cookie")
+	} else if cookie.Name != "ALIENOR_SESS" {
+		t.Error("bad cookie name")
+	} else if cookie.Value != token {
+		t.Error("bad cookie value")
+	} else if !cookie.HttpOnly {
+		t.Error("expect cookie in http only")
+	}
 }
 
 /* ################################################################################################################## */
@@ -213,14 +262,14 @@ func TestWriteSessionCookieWhenPreviousCookiesShouldRefreshIt(t *testing.T) {
 func BenchmarkCheckToken(b *testing.B) {
 	// given
 	secret = []byte("some secret")
-	usr := model.User{Id: "leroy.jenkins", Type:model.USER}
+	usr := model.User{Id: "leroy.jenkins", Type: model.USER}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub": usr.Id,
 		"exp": time.Now().Add(60 * time.Second).Unix(),
 	})
 	tokenString, _ := token.SignedString(secret)
-	r := http.Request{Header:http.Header{}}
-	r.Header.Set("Authorization", "bearer " + tokenString)
+	r := http.Request{Header: http.Header{}}
+	r.Header.Set("Authorization", "bearer "+tokenString)
 	// bench
 	for n := 0; n < b.N; n++ {
 		CheckToken(&r)
@@ -236,7 +285,7 @@ func BenchmarkChechUser(b *testing.B) {
 	defer func() {
 		userRepository = new(rep.UserRepository) // reset userRepository
 	}()
-	userRepository = &utils.RepositoryHeader{DoGet:func(identifier string, entity model.Document) (gocb.Cas, error) {
+	userRepository = &test.RepositoryHeader{DoGet: func(identifier string, entity model.Document) (gocb.Cas, error) {
 		pwd, _ := bcrypt.GenerateFromPassword([]byte("wipe"), bcrypt.DefaultCost)
 		userInRepo := entity.(*model.User)
 		userInRepo.Password = string(pwd)

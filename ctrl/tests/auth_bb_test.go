@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/bcrypt"
 	"testing"
-	"github.com/jeromedoucet/alienor-back/utils"
+	"github.com/jeromedoucet/alienor-back/test"
 )
 
 
@@ -18,22 +18,22 @@ import (
 
 func TestHandleAuthSuccess(t *testing.T) {
 	// given
-	utils.Before()
+	test.Before()
 	pwd := "wipe"
 	login := "leroy.jenkins"
 	hPwd, _ := bcrypt.GenerateFromPassword([]byte(pwd), bcrypt.DefaultCost)
 	usr := model.User{Id: login, Type:model.USER, Password: string(hPwd)}
 
-	utils.Populate(map[string]interface{}{"user:" + usr.Id: usr})
+	test.Populate(map[string]interface{}{"user:" + usr.Id: usr})
 
-	s := utils.StartHttp(func(r component.Router) {
-		ctrl.InitEndPoints(r, utils.CouchBaseAddr, "", utils.Secret)
+	s := test.StartHttp(func(r component.Router) {
+		ctrl.InitEndPoints(r, test.CouchBaseAddr, "", test.Secret)
 	})
 	defer s.Close()
 	body, _ := json.Marshal(ctrl.AuthReq{Login: login, Pwd: pwd})
 
 	// when
-	res, err := utils.DoReq(s.URL + "/login", "POST", bytes.NewBuffer(body))
+	res, err := test.DoReq(s.URL + "/login", "POST", bytes.NewBuffer(body))
 
 	// then
 	assert.Nil(t, err)
@@ -47,29 +47,29 @@ func TestHandleAuthSuccess(t *testing.T) {
 	_, jwtError := jwt.Parse(jwtToken, func(token *jwt.Token) (interface{}, error) {
 		_, ok := token.Method.(*jwt.SigningMethodHMAC)
 		assert.Equal(t, true, ok)
-		return []byte(utils.Secret), nil
+		return []byte(test.Secret), nil
 	})
 	assert.Nil(t, jwtError)
 }
 
 func TestHandleBadPassword(t *testing.T) {
 	// given
-	utils.Before()
+	test.Before()
 	pwd := "wipe"
 	login := "leroy.jenkins"
 	hPwd, _ := bcrypt.GenerateFromPassword([]byte(pwd), bcrypt.DefaultCost)
 	usr := model.User{Id: login, Type:model.USER, Password: string(hPwd)}
 
-	utils.Populate(map[string]interface{}{"user:" + usr.Id: usr})
+	test.Populate(map[string]interface{}{"user:" + usr.Id: usr})
 
-	s := utils.StartHttp(func(r component.Router) {
-		ctrl.InitEndPoints(r, utils.CouchBaseAddr, "", utils.Secret)
+	s := test.StartHttp(func(r component.Router) {
+		ctrl.InitEndPoints(r, test.CouchBaseAddr, "", test.Secret)
 	})
 	defer s.Close()
 	body, _ := json.Marshal(ctrl.AuthReq{Login: login, Pwd: "roxx"})
 
 	// when
-	res, err := utils.DoReq(s.URL + "/login", "POST", bytes.NewBuffer(body))
+	res, err := test.DoReq(s.URL + "/login", "POST", bytes.NewBuffer(body))
 
 	// then
 	assert.Nil(t, err)
@@ -78,16 +78,16 @@ func TestHandleBadPassword(t *testing.T) {
 
 func TestHandleUnknownUser(t *testing.T) {
 	// given
-	utils.Before()
+	test.Before()
 
-	s := utils.StartHttp(func(r component.Router) {
-		ctrl.InitEndPoints(r, utils.CouchBaseAddr, "", utils.Secret)
+	s := test.StartHttp(func(r component.Router) {
+		ctrl.InitEndPoints(r, test.CouchBaseAddr, "", test.Secret)
 	})
 	defer s.Close()
 	body, _ := json.Marshal(ctrl.AuthReq{Login: "leroy.jenkins", Pwd: "test"})
 
 	// when
-	res, err := utils.DoReq(s.URL + "/login", "POST", bytes.NewBuffer(body))
+	res, err := test.DoReq(s.URL + "/login", "POST", bytes.NewBuffer(body))
 
 	// then
 	assert.Nil(t, err)

@@ -13,10 +13,12 @@ var (
 	itemRepository rep.Repository = new(rep.ItemRepository)
 )
 
+// filter used to check authentication
 type AuthFilter struct {
 	HandleBusiness func (w http.ResponseWriter, r *http.Request)
 }
 
+// the authentication check. If
 func (a *AuthFilter) HandleAuth(w http.ResponseWriter, r *http.Request)  {
 	_, err :=CheckToken(r)
 	if err != nil {

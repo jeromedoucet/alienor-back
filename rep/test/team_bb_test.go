@@ -2,7 +2,7 @@ package rep_test
 
 import (
 	"testing"
-	"github.com/jeromedoucet/alienor-back/utils"
+	"github.com/jeromedoucet/alienor-back/test"
 	"github.com/jeromedoucet/alienor-back/rep"
 	"github.com/stretchr/testify/assert"
 	"github.com/couchbase/gocb"
@@ -10,10 +10,10 @@ import (
 
 func TestTeamExistWhenTeamExist(t *testing.T) {
 	// given
-	utils.Before()
-	illidan := utils.PrepareUserWithTeam("A-Team", "illidan.stormrage")
-	utils.Populate(map[string]interface{}{"user:" + illidan.Id: illidan})
-	rep.InitRepo(utils.CouchBaseAddr, "")
+	test.Before()
+	illidan := test.PrepareUserWithTeam("A-Team", "illidan.stormrage")
+	test.Populate(map[string]interface{}{"user:" + illidan.Id: illidan})
+	rep.InitRepo(test.CouchBaseAddr, "")
 
 	// when
 	exist, err := rep.TeamExist("A-Team", gocb.RequestPlus)
@@ -25,8 +25,8 @@ func TestTeamExistWhenTeamExist(t *testing.T) {
 
 func TestTeamExistWhenDoesNotTeamExist(t *testing.T) {
 	// given
-	utils.Before()
-	rep.InitRepo(utils.CouchBaseAddr, "")
+	test.Before()
+	rep.InitRepo(test.CouchBaseAddr, "")
 
 	// when
 	exist, err := rep.TeamExist("A-Team", gocb.RequestPlus)
