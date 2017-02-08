@@ -5,7 +5,6 @@ import (
 	"github.com/jeromedoucet/alienor-back/test"
 	"github.com/jeromedoucet/alienor-back/model"
 	"github.com/jeromedoucet/alienor-back/rep"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestGetUserShouldUserWithSuccess(t *testing.T) {
@@ -23,15 +22,20 @@ func TestGetUserShouldUserWithSuccess(t *testing.T) {
 	actualUser := model.NewUser()
 	userRepository := new(rep.UserRepository)
 	// when
-	cas, err := userRepository.Get(usr.Id, actualUser)
+	_, err := userRepository.Get(usr.Id, actualUser)
 
 	// then
-	assert.Nil(t, err)
-	assert.NotNil(t, cas)
-	assert.Equal(t, usr.Email, actualUser.Email)
-	assert.Equal(t, usr.ForName, actualUser.ForName)
-	assert.Equal(t, usr.Name, actualUser.Name)
-	assert.Equal(t, actualUser.Password, usr.Password)
+	if err != nil {
+		t.Error("expect error to be nil")
+	} else if actualUser.Email != usr.Email  {
+		t.Error("expect users email to be equals")
+	} else if actualUser.ForName != usr.ForName {
+		t.Error("expect users ForName to be equals")
+	} else if actualUser.Name != usr.Name {
+		t.Error("expect users Name to be equals")
+	} else if actualUser.Password != usr.Password {
+		t.Error("expect users Password to be equals")
+	}
 }
 
 func TestGetUserShouldUserWithError(t *testing.T) {
@@ -45,7 +49,9 @@ func TestGetUserShouldUserWithError(t *testing.T) {
 	_, err := userRepository.Get("leroy.jenkins", actualUser)
 
 	// then
-	assert.NotNil(t, err)
+	if err == nil {
+		t.Error("expect error not to be nil")
+	}
 }
 
 func TestInsertANonUserEntity(t *testing.T) {
@@ -57,8 +63,11 @@ func TestInsertANonUserEntity(t *testing.T) {
 	err := userRepository.Insert(&test.MockDocument{Id: "someId"})
 
 	// then
-	assert.NotNil(t, err)
-	assert.Equal(t, "Cannot Insert a non user entity !", err.Error())
+	if err == nil {
+		t.Error("expect error not to be nil")
+	} else if err.Error() != "Cannot Insert a non user entity !" {
+		t.Error("bad error message")
+	}
 }
 
 func TestInsertUserWithoutPwd(t *testing.T) {
@@ -77,6 +86,9 @@ func TestInsertUserWithoutPwd(t *testing.T) {
 	err := userRepository.Insert(usr)
 
 	// then
-	assert.NotNil(t, err)
-	assert.Equal(t, "Cannot Insert a user without password!", err.Error())
+	if err == nil {
+		t.Error("expect error not to be nil")
+	} else if err.Error() != "Cannot Insert a user without password!" {
+		t.Error("bad error message")
+	}
 }

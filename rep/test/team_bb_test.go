@@ -4,7 +4,6 @@ import (
 	"testing"
 	"github.com/jeromedoucet/alienor-back/test"
 	"github.com/jeromedoucet/alienor-back/rep"
-	"github.com/stretchr/testify/assert"
 	"github.com/couchbase/gocb"
 )
 
@@ -19,8 +18,11 @@ func TestTeamExistWhenTeamExist(t *testing.T) {
 	exist, err := rep.TeamExist("A-Team", gocb.RequestPlus)
 
 	// then
-	assert.Nil(t, err)
-	assert.True(t, exist)
+	if err != nil {
+		t.Error("expect error not to be nil")
+	} else if exist != true {
+		t.Error("expect exist to be true")
+	}
 }
 
 func TestTeamExistWhenDoesNotTeamExist(t *testing.T) {
@@ -32,7 +34,10 @@ func TestTeamExistWhenDoesNotTeamExist(t *testing.T) {
 	exist, err := rep.TeamExist("A-Team", gocb.RequestPlus)
 
 	// then
-	assert.Nil(t, err)
-	assert.False(t, exist)
+	if err != nil {
+		t.Error("expect err to be nil")
+	} else if exist != false {
+		t.Error("expect exist to be false")
+	}
 }
 

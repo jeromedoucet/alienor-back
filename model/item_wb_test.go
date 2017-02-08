@@ -2,13 +2,15 @@ package model
 
 import (
 	"testing"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestNewItem(t *testing.T) {
 	// when
 	item := NewItem()
 	// then
-	assert.Equal(t, Newly, item.State)
-	assert.Equal(t, ITEM, item.Type)
+	if item.State != Newly {
+		t.Error("expect state to be Newly")
+	} else if item.Type != ITEM {
+		t.Error("expect type to be ITEM")
+	}
 }
