@@ -7,7 +7,6 @@ import (
 	"github.com/jeromedoucet/alienor-back/component"
 	"bytes"
 	"encoding/json"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"github.com/jeromedoucet/alienor-back/model"
 )
@@ -28,15 +27,22 @@ func TestCreateItemNominal(t *testing.T) {
 	res, err := test.DoReqWithToken(s.URL + "/item?team-id=" + illidan.Roles[0].Team.Id, "POST", bytes.NewBuffer(body), token)
 
 	// then
-	assert.Nil(t, err)
-	assert.Equal(t ,http.StatusCreated, res.StatusCode)
+	if err != nil {
+		t.Error("expect error to be nil")
+	} else if res.StatusCode != http.StatusCreated {
+		t.Error("expect status code to equals 201")
+	}
 	// todo assert body response
 	savedItem := test.GetItem(newItem.Id, illidan.Roles[0].Team.Id)
-	assert.NotNil(t, savedItem)
-	assert.Equal(t, newItem.Id, savedItem.Id)
-	assert.Equal(t, model.ITEM, savedItem.Type)
-	assert.Equal(t, model.Newly , savedItem.State)
-	assert.Equal(t, illidan.Roles[0].Team.Id , savedItem.TeamId)
+	if savedItem.Id != newItem.Id {
+		t.Error("expect items id to be the same")
+	} else if savedItem.Type != model.ITEM {
+		t.Error("expect item type to be item")
+	} else if savedItem.State != model.Newly {
+		t.Error("expect item state to be new")
+	} else if savedItem.TeamId != illidan.Roles[0].Team.Id {
+		t.Error("bad team id")
+	}
 }
 
 func TestCreateItemWillFailedWhenNOtAuthenticated(t *testing.T) {
@@ -55,8 +61,11 @@ func TestCreateItemWillFailedWhenNOtAuthenticated(t *testing.T) {
 	res, err := test.DoReq(s.URL + "/item?team-id=" + illidan.Roles[0].Team.Id, "POST", bytes.NewBuffer(body))
 
 	// then
-	assert.Nil(t, err)
-	assert.Equal(t ,http.StatusUnauthorized, res.StatusCode)
+	if err != nil {
+		t.Error("expect error to be nil")
+	} else if res.StatusCode != http.StatusUnauthorized {
+		t.Error("expect status code to equals 401")
+	}
 }
 
 // item id vide

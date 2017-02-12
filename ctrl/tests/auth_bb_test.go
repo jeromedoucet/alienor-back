@@ -13,7 +13,6 @@ import (
 	"github.com/jeromedoucet/alienor-back/test"
 )
 
-
 // todo => check the error msg !
 
 func TestHandleAuthSuccess(t *testing.T) {
@@ -22,7 +21,7 @@ func TestHandleAuthSuccess(t *testing.T) {
 	pwd := "wipe"
 	login := "leroy.jenkins"
 	hPwd, _ := bcrypt.GenerateFromPassword([]byte(pwd), bcrypt.DefaultCost)
-	usr := model.User{Id: login, Type:model.USER, Password: string(hPwd)}
+	usr := model.User{Id: login, Type: model.USER, Password: string(hPwd)}
 
 	test.Populate(map[string]interface{}{"user:" + usr.Id: usr})
 
@@ -33,23 +32,31 @@ func TestHandleAuthSuccess(t *testing.T) {
 	body, _ := json.Marshal(ctrl.AuthReq{Login: login, Pwd: pwd})
 
 	// when
-	res, err := test.DoReq(s.URL + "/login", "POST", bytes.NewBuffer(body))
+	res, err := test.DoReq(s.URL+"/login", "POST", bytes.NewBuffer(body))
 
 	// then
-	assert.Nil(t, err)
-	assert.Equal(t, 200, res.StatusCode)
-	// check jwt token
-	assert.Len(t, res.Cookies(), 1)
+	if err != nil {
+		t.Error("expect error to be nil")
+	} else if res.StatusCode != 200 {
+		t.Error("expect status code to be equals to 200")
+	} else if len(res.Cookies()) != 1 {
+		t.Error("expect to have only one cookie")
+	}
 	cookie := res.Cookies()[0]
-	assert.True(t, cookie.HttpOnly)
-	assert.Equal(t, "ALIENOR_SESS", cookie.Name)
+	if !cookie.HttpOnly {
+		t.Error("expect cookie to be http only")
+	} else if cookie.Name != "ALIENOR_SESS" {
+		t.Error("expect cookie name to be 'ALIENOR_SESS'")
+	}
 	jwtToken := cookie.Value
 	_, jwtError := jwt.Parse(jwtToken, func(token *jwt.Token) (interface{}, error) {
 		_, ok := token.Method.(*jwt.SigningMethodHMAC)
 		assert.Equal(t, true, ok)
 		return []byte(test.Secret), nil
 	})
-	assert.Nil(t, jwtError)
+	if jwtError != nil {
+		t.Error("expect token to be successfuly unmarshall")
+	}
 }
 
 func TestHandleBadPassword(t *testing.T) {
@@ -58,7 +65,7 @@ func TestHandleBadPassword(t *testing.T) {
 	pwd := "wipe"
 	login := "leroy.jenkins"
 	hPwd, _ := bcrypt.GenerateFromPassword([]byte(pwd), bcrypt.DefaultCost)
-	usr := model.User{Id: login, Type:model.USER, Password: string(hPwd)}
+	usr := model.User{Id: login, Type: model.USER, Password: string(hPwd)}
 
 	test.Populate(map[string]interface{}{"user:" + usr.Id: usr})
 
@@ -69,11 +76,14 @@ func TestHandleBadPassword(t *testing.T) {
 	body, _ := json.Marshal(ctrl.AuthReq{Login: login, Pwd: "roxx"})
 
 	// when
-	res, err := test.DoReq(s.URL + "/login", "POST", bytes.NewBuffer(body))
+	res, err := test.DoReq(s.URL+"/login", "POST", bytes.NewBuffer(body))
 
 	// then
-	assert.Nil(t, err)
-	assert.Equal(t, 400, res.StatusCode)
+	if err != nil {
+		t.Error("expect error to be nil")
+	} else if res.StatusCode != 400 {
+		t.Error("expect status code to be equals to 400")
+	}
 }
 
 func TestHandleUnknownUser(t *testing.T) {
@@ -87,9 +97,12 @@ func TestHandleUnknownUser(t *testing.T) {
 	body, _ := json.Marshal(ctrl.AuthReq{Login: "leroy.jenkins", Pwd: "test"})
 
 	// when
-	res, err := test.DoReq(s.URL + "/login", "POST", bytes.NewBuffer(body))
+	res, err := test.DoReq(s.URL+"/login", "POST", bytes.NewBuffer(body))
 
 	// then
-	assert.Nil(t, err)
-	assert.Equal(t, 404, res.StatusCode)
+	if err != nil {
+		t.Error("expect error to be nil")
+	} else if res.StatusCode != 404 {
+		t.Error("expect status code to equals 404")
+	}
 }
