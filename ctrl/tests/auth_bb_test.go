@@ -7,7 +7,6 @@ import (
 	"github.com/jeromedoucet/alienor-back/component"
 	"github.com/jeromedoucet/alienor-back/ctrl"
 	"github.com/jeromedoucet/alienor-back/model"
-	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/bcrypt"
 	"testing"
 	"github.com/jeromedoucet/alienor-back/test"
@@ -51,7 +50,9 @@ func TestHandleAuthSuccess(t *testing.T) {
 	jwtToken := cookie.Value
 	_, jwtError := jwt.Parse(jwtToken, func(token *jwt.Token) (interface{}, error) {
 		_, ok := token.Method.(*jwt.SigningMethodHMAC)
-		assert.Equal(t, true, ok)
+		if !ok {
+			t.Fatal("expect token method signature to be jwt.SigningMethodHMAC")
+		}
 		return []byte(test.Secret), nil
 	})
 	if jwtError != nil {

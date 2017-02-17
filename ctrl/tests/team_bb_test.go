@@ -7,7 +7,6 @@ import (
 	"github.com/jeromedoucet/alienor-back/component"
 	"encoding/json"
 	"bytes"
-	"github.com/stretchr/testify/assert"
 	"github.com/jeromedoucet/alienor-back/model"
 )
 
@@ -29,8 +28,11 @@ func TestTeamCreationSuccessFull(t *testing.T) {
 	res, err := test.DoReqWithToken(s.URL+"/team", "POST", bytes.NewBuffer(body), token)
 
 	// then
-	assert.Nil(t, err)
-	assert.Equal(t, 201, res.StatusCode)
+	if err != nil {
+		t.Fatal("expected error to be nil")
+	} else if res.StatusCode != 201 {
+		t.Fatal("expected status code to equals 201")
+	}
 
 	// http res check
 	var teamRes model.Team
