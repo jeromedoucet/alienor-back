@@ -51,6 +51,24 @@ func TestRegisterHandlerWithStaticRoute(t *testing.T) {
 	}
 }
 
+func TestRegisterHandlerWithNilHandler(t *testing.T) {
+	// given
+	defer func() {
+		if r := recover(); r != nil {
+			t.Log("successfuly caught the router panic")
+		}
+	}()
+	// at the same tree level, dymanic path value has to be considered as the same resource
+	path := []string{"api", "v1", "item1"}
+	r := NewDynamicRouter()
+
+	// when
+	r.registerHandler(path, nil)
+
+	// the router must panic. If not => fatal
+	t.Fatal("expect the router to panic")
+}
+
 func TestRegisterHandlerWithDynamicPartOfPath(t *testing.T) {
 	// given
 
@@ -66,7 +84,7 @@ func TestRegisterHandlerWithDynamicPartOfPath(t *testing.T) {
 	}
 	// at the same tree level, dymanic path value has to be considered as the same resource
 	path1 := []string{"api", ":someId1", "item1"}
-	path2 := []string{"api", ":someId2", "item2"}
+	path2 := []string{"api", ":someId1", "item2"}
 	r := NewDynamicRouter()
 
 	// when
@@ -85,7 +103,7 @@ func TestRegisterHandlerWithDynamicPartOfPath(t *testing.T) {
 		t.Fatal("the root node must have one children")
 	}
 
-	dynamic, dynamicPresent := api.children[":"]
+	dynamic, dynamicPresent := api.children[":someId1"]
 	if !dynamicPresent {
 		t.Fatal("the second node should be on v1")
 	} else if len(dynamic.children) != 2 {
@@ -115,6 +133,52 @@ func TestRegisterHandlerWithDynamicPartOfPath(t *testing.T) {
 	if !called2 {
 		t.Fatal("the handler has not been correctly registered")
 	}
+}
+
+func TestRegisterHandlerWithConflictOnStaticPartOfPath(t *testing.T) {
+	// given
+	defer func() {
+		if r := recover(); r != nil {
+			t.Log("successfuly caught the router panic")
+		}
+	}()
+	f1 := func(http.ResponseWriter, *http.Request) {}
+
+	f2 := func(http.ResponseWriter, *http.Request) {}
+	// at the same tree level, dymanic path value has to be considered as the same resource
+	path1 := []string{"api", "v1", "item1"}
+	path2 := []string{"api", "v1", "item1"}
+	r := NewDynamicRouter()
+
+	// when
+	r.registerHandler(path1, f1)
+	r.registerHandler(path2, f2)
+
+	// the router must panic. If not => fatal
+	t.Fatal("expect the router to panic")
+}
+
+func TestRegisterHandlerWithConflictOnDynamicPartOfPath(t *testing.T) {
+	// given
+	defer func() {
+		if r := recover(); r != nil {
+			t.Log("successfuly caught the router panic")
+		}
+	}()
+	f1 := func(http.ResponseWriter, *http.Request) {}
+
+	f2 := func(http.ResponseWriter, *http.Request) {}
+	// at the same tree level, dymanic path value has to be considered as the same resource
+	path1 := []string{"api", ":someId1", "item1"}
+	path2 := []string{"api", ":someId2", "item2"}
+	r := NewDynamicRouter()
+
+	// when
+	r.registerHandler(path1, f1)
+	r.registerHandler(path2, f2)
+
+	// the router must panic. If not => fatal
+	t.Fatal("expect the router to panic")
 }
 
 func TestFindEndpointOnStaticRoute(t *testing.T) {
@@ -160,7 +224,7 @@ func TestFindEndpointOnDynamicRoute(t *testing.T) {
 	r.root["api"] = &node{children: make(map[string]*node)}
 	r.root["api"].children["v1"] = &node{children: make(map[string]*node)}
 	r.root["api"].children["v1"].children["item"] = &node{children: make(map[string]*node)}
-	r.root["api"].children["v1"].children["item"].children[":"] = &node{children: make(map[string]*node), handler: f}
+	r.root["api"].children["v1"].children["item"].children[":itemId"] = &node{children: make(map[string]*node), handler: f}
 
 	// when
 	n, err := r.findEndpoint(&req)
@@ -181,34 +245,32 @@ func TestFindEndpointOnDynamicRoute(t *testing.T) {
 // #######################################################################
 
 func BenchmarkFindEndpointOnStaticRoute(b *testing.B) {
-	// given
-	f := func(http.ResponseWriter, *http.Request) {}
-	r := NewDynamicRouter()
-	r.root["api"] = &node{children: make(map[string]*node)}
-	r.root["api"].children["v1"] = &node{children: make(map[string]*node)}
-	r.root["api"].children["v1"].children["item"] = &node{children: make(map[string]*node), handler: f}
-
-	req := http.Request{URL: &url.URL{Path: "/api/v1/item/"}}
-
-	for n := 0; n < b.N; n++ {
-		r.findEndpoint(&req)
-	}
+	b.RunParallel(func(pb *testing.PB) {
+		f := func(http.ResponseWriter, *http.Request) {}
+		r := NewDynamicRouter()
+		r.root["api"] = &node{children: make(map[string]*node)}
+		r.root["api"].children["v1"] = &node{children: make(map[string]*node)}
+		r.root["api"].children["v1"].children["item"] = &node{children: make(map[string]*node), handler: f}
+		req := http.Request{URL: &url.URL{Path: "/api/v1/item/"}}
+		for pb.Next() {
+			r.findEndpoint(&req)
+		}
+	})
 }
 
 func BenchmarkFindEndpointOnDynamicRouteRoute(b *testing.B) {
-	// given
-	f := func(http.ResponseWriter, *http.Request) {}
-	r := NewDynamicRouter()
-	r.root["api"] = &node{children: make(map[string]*node)}
-	r.root["api"].children["v1"] = &node{children: make(map[string]*node)}
-	r.root["api"].children["v1"].children["item"] = &node{children: make(map[string]*node)}
-	r.root["api"].children["v1"].children["item"].children[":"] = &node{children: make(map[string]*node), handler: f}
-
-	req := http.Request{URL: &url.URL{Path: "/api/v1/item/:itemId"}}
-
-	for n := 0; n < b.N; n++ {
-		r.findEndpoint(&req)
-	}
+	b.RunParallel(func(pb *testing.PB) {
+		f := func(http.ResponseWriter, *http.Request) {}
+		r := NewDynamicRouter()
+		r.root["api"] = &node{children: make(map[string]*node)}
+		r.root["api"].children["v1"] = &node{children: make(map[string]*node)}
+		r.root["api"].children["v1"].children["item"] = &node{children: make(map[string]*node)}
+		r.root["api"].children["v1"].children["item"].children[":"] = &node{children: make(map[string]*node), handler: f}
+		req := http.Request{URL: &url.URL{Path: "/api/v1/item/:itemId"}}
+		for pb.Next() {
+			r.findEndpoint(&req)
+		}
+	})
 }
 
 // test unknown path

@@ -30,21 +30,36 @@ func (r *DynamicRouter) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 }
 
 func (r *DynamicRouter) registerHandler(paths []string, handler func(http.ResponseWriter, *http.Request)) {
-	// todo verifier si il existe deja (nil sur handler ?) => panic
 	// todo handle paths empty
 	// todo ajouter les verbes http
+	if handler == nil {
+		panic("handler cannot be nil")
+	}
 	children := r.root
 	var n *node
 	var ok bool
 	for _, path := range paths {
 		/*
-		 * we only consider static and dynamic element of the path
-		 * static are directly registered into the tree
-		 * dynamic element start with ':' and are registered as it into the tree
-		 * each node can only have one dynamic element
+		 * we only consider static and dynamic identifier of the path.
+		 *
+		 * For static :
+		 * If at a given non terminal node, the resource
+		 * already exist, and if the identifier is static, we just
+		 * pass to the next level.
+		 *
+		 * For dynamic :
+		 * if the identifier of the resource is dynamic and if a
+		 * dynamic identifier already exist with another name, the router will panic.
+		 *
+		 * Common :
+		 * If the node denoted by the incoming path already has a handler, the router will panic
 		 */
 		if strings.HasPrefix(path, ":") {
-			path = ":"
+			for m := range children {
+				if strings.HasPrefix(m, ":") && path != m {
+					panic("a dynamic identifier has already been registered at that level")
+				}
+			}
 		}
 		n, ok = children[path]
 		if !ok {
@@ -54,16 +69,20 @@ func (r *DynamicRouter) registerHandler(paths []string, handler func(http.Respon
 		}
 		children = n.children
 	}
+	if n.handler != nil {
+		panic("a handler is already registered for this path")
+	}
 	n.handler = handler
 }
 
 func (r *DynamicRouter) findEndpoint(req *http.Request) (n *node, err error) {
 	// todo clean path
-	// todo check url encode
+	// todo check url encoder
 	return parseTree(r.root, splitPath(req.URL.Path))
 }
 
 func splitPath(path string) []string {
+	// todo replace "// by /" ?
 	p := strings.TrimPrefix(path, "/")
 	return strings.Split(strings.TrimSuffix(p, "/"), "/")
 }
@@ -71,11 +90,8 @@ func splitPath(path string) []string {
 func parseTree(children map[string]*node, path []string) (*node, error) {
 	n, ok := children[path[0]]
 	if !ok {
-		// if the path doesn't match a static value, try with dynamic
-		n, ok = children[":"]
-		if !ok {
-			return n, errors.New("unknown path")
-		}
+		return n, errors.New("unknown path")
+
 	}
 	if len(path) > 1 {
 		return parseTree(n.children, path[1:])
