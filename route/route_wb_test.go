@@ -51,6 +51,70 @@ func TestRegisterHandlerWithStaticRoute(t *testing.T) {
 	}
 }
 
+func TestRegisterHandlerWithEmptyPartOfPath(t *testing.T) {
+	// given
+	var called bool
+	f := func(http.ResponseWriter, *http.Request) {
+		called = true
+	}
+	path := []string{"api", "v1", "", "team"}
+
+	r := NewDynamicRouter()
+
+	// when
+	r.registerHandler(path, f)
+
+	// then
+	if len(r.root) != 1 {
+		t.Fatal("router must only have one path root")
+	}
+
+	api, apiPresent := r.root["api"]
+	if !apiPresent {
+		t.Fatal("the first node should be on api")
+	} else if len(api.children) != 1 {
+		t.Fatal("the root node must have one children")
+	}
+
+	v1, v1Present := api.children["v1"]
+	if !v1Present {
+		t.Fatal("the second node should be on v1")
+	} else if len(v1.children) != 1 {
+		t.Fatal("the second node must have one children")
+	}
+	team, teamPresent := v1.children["team"]
+	if !teamPresent {
+		t.Fatal("the last node should be on team")
+	} else if len(team.children) != 0 {
+		t.Fatal("the last node must have no children")
+	}
+
+	team.handler(httptest.NewRecorder(), &http.Request{})
+	if !called {
+		t.Fatal("the handler has not been correctly registered")
+	}
+}
+
+func TestRegisterHandlerWithEmptyPath(t *testing.T) {
+	// given
+	defer func() {
+		if r := recover(); r != nil {
+			t.Log("successfuly caught the router panic")
+		}
+	}()
+	f := func(http.ResponseWriter, *http.Request) {}
+
+	// at the same tree level, dymanic path value has to be considered as the same resource
+	path := []string{}
+	r := NewDynamicRouter()
+
+	// when
+	r.registerHandler(path, f)
+
+	// the router must panic. If not => fatal
+	t.Fatal("expect the router to panic")
+}
+
 func TestRegisterHandlerWithNilHandler(t *testing.T) {
 	// given
 	defer func() {
@@ -265,7 +329,7 @@ func BenchmarkFindEndpointOnDynamicRouteRoute(b *testing.B) {
 		r.root["api"] = &node{children: make(map[string]*node)}
 		r.root["api"].children["v1"] = &node{children: make(map[string]*node)}
 		r.root["api"].children["v1"].children["item"] = &node{children: make(map[string]*node)}
-		r.root["api"].children["v1"].children["item"].children[":"] = &node{children: make(map[string]*node), handler: f}
+		r.root["api"].children["v1"].children["item"].children[":itemId"] = &node{children: make(map[string]*node), handler: f}
 		req := http.Request{URL: &url.URL{Path: "/api/v1/item/:itemId"}}
 		for pb.Next() {
 			r.findEndpoint(&req)

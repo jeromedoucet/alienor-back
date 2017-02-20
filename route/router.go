@@ -30,15 +30,19 @@ func (r *DynamicRouter) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 }
 
 func (r *DynamicRouter) registerHandler(paths []string, handler func(http.ResponseWriter, *http.Request)) {
-	// todo handle paths empty
 	// todo ajouter les verbes http
 	if handler == nil {
 		panic("handler cannot be nil")
+	} else if len(paths) < 1 {
+		panic("path cannot be nil")
 	}
 	children := r.root
 	var n *node
 	var ok bool
 	for _, path := range paths {
+		if path == "" {
+			continue
+		}
 		/*
 		 * we only consider static and dynamic identifier of the path.
 		 *
@@ -82,7 +86,6 @@ func (r *DynamicRouter) findEndpoint(req *http.Request) (n *node, err error) {
 }
 
 func splitPath(path string) []string {
-	// todo replace "// by /" ?
 	p := strings.TrimPrefix(path, "/")
 	return strings.Split(strings.TrimSuffix(p, "/"), "/")
 }
