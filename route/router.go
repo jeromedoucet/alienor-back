@@ -22,11 +22,20 @@ func NewDynamicRouter() *DynamicRouter {
 }
 
 func (r *DynamicRouter) HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request)) {
-	r.registerHandler(splitPath(pattern), handler)
+	r.registerHandler(SplitPath(pattern), handler)
 }
 
+// todo perf tests
 func (r *DynamicRouter) ServeHTTP(res http.ResponseWriter, req *http.Request) {
-
+	// todo test me
+	n, err := r.findEndpoint(req)
+	if err != nil {
+		// todo add a default handler
+		res.WriteHeader(404)
+	} else if n.handler != nil {
+		// todo test that
+		n.handler(res, req)
+	}
 }
 
 func (r *DynamicRouter) registerHandler(paths []string, handler func(http.ResponseWriter, *http.Request)) {
@@ -82,10 +91,10 @@ func (r *DynamicRouter) registerHandler(paths []string, handler func(http.Respon
 func (r *DynamicRouter) findEndpoint(req *http.Request) (n *node, err error) {
 	// todo clean path
 	// todo check url encoder
-	return parseTree(r.root, splitPath(req.URL.Path))
+	return parseTree(r.root, SplitPath(req.URL.Path))
 }
 
-func splitPath(path string) []string {
+func SplitPath(path string) []string {
 	p := strings.TrimPrefix(path, "/")
 	return strings.Split(strings.TrimSuffix(p, "/"), "/")
 }
@@ -93,7 +102,16 @@ func splitPath(path string) []string {
 func parseTree(children map[string]*node, path []string) (*node, error) {
 	n, ok := children[path[0]]
 	if !ok {
-		return n, errors.New("unknown path")
+		// if no static path found, look for a dynamic one
+		for p, dn := range children {
+			if strings.HasPrefix(p, ":") {
+				n = dn
+				break
+			}
+		}
+		if n == nil {
+			return n, errors.New("unknown path")
+		}
 
 	}
 	if len(path) > 1 {

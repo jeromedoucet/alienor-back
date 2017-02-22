@@ -5,6 +5,7 @@ import (
 	"github.com/jeromedoucet/alienor-back/component"
 	"encoding/json"
 	"github.com/jeromedoucet/alienor-back/model"
+	"github.com/jeromedoucet/alienor-back/route"
 )
 
 type ItemCreationReq struct {
@@ -16,7 +17,7 @@ func handleItem(w http.ResponseWriter, r *http.Request) {
 	json.NewDecoder(r.Body).Decode(&req)
 	item := model.NewItem()
 	item.Id = req.Id
-	item.TeamId = r.URL.Query().Get("team-id")
+	item.TeamId = route.SplitPath(r.URL.Path)[1]
 	itemRepository.Insert(item)
 	w.WriteHeader(201)
 }

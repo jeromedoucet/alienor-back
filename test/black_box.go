@@ -10,6 +10,7 @@ import (
 	"github.com/jeromedoucet/alienor-back/model"
 	"github.com/dgrijalva/jwt-go"
 	"time"
+	"github.com/jeromedoucet/alienor-back/route"
 )
 
 // todo check that this package is not in binary
@@ -49,7 +50,7 @@ func Before() {
 
 // exec registrator and start a tls server
 func StartHttp(registrator func(component.Router)) *httptest.Server {
-	m := http.NewServeMux()
+	m := route.NewDynamicRouter()
 	registrator(m)
 	return httptest.NewTLSServer(m)
 }

@@ -22,26 +22,26 @@ func TestCreateItemNominal(t *testing.T) {
 
 	newItem := ctrl.ItemCreationReq{Id: "#HelloWorld"}
 	body, _:= json.Marshal(newItem)
-	token := test.CreateToken(illidan);
+	token := test.CreateToken(illidan)
 	// when
-	res, err := test.DoReqWithToken(s.URL + "/item?team-id=" + illidan.Roles[0].Team.Id, "POST", bytes.NewBuffer(body), token)
+	res, err := test.DoReqWithToken(s.URL + "/team/"+ illidan.Roles[0].Team.Id + "/item", "POST", bytes.NewBuffer(body), token)
 
 	// then
 	if err != nil {
-		t.Error("expect error to be nil")
+		t.Fatal("expect error to be nil")
 	} else if res.StatusCode != http.StatusCreated {
-		t.Error("expect status code to equals 201")
+		t.Fatal("expect status code to equals 201")
 	}
 	// todo assert body response
 	savedItem := test.GetItem(newItem.Id, illidan.Roles[0].Team.Id)
 	if savedItem.Id != newItem.Id {
-		t.Error("expect items id to be the same")
+		t.Fatal("expect items id to be the same")
 	} else if savedItem.Type != model.ITEM {
-		t.Error("expect item type to be item")
+		t.Fatal("expect item type to be item")
 	} else if savedItem.State != model.Newly {
-		t.Error("expect item state to be new")
+		t.Fatal("expect item state to be new")
 	} else if savedItem.TeamId != illidan.Roles[0].Team.Id {
-		t.Error("bad team id")
+		t.Fatal("bad team id")
 	}
 }
 
@@ -58,7 +58,7 @@ func TestCreateItemWillFailedWhenNOtAuthenticated(t *testing.T) {
 	body, _:= json.Marshal(newItem)
 
 	// when
-	res, err := test.DoReq(s.URL + "/item?team-id=" + illidan.Roles[0].Team.Id, "POST", bytes.NewBuffer(body))
+	res, err := test.DoReq(s.URL + "/team/"+ illidan.Roles[0].Team.Id + "/item", "POST", bytes.NewBuffer(body))
 
 	// then
 	if err != nil {

@@ -5,6 +5,7 @@ import (
 	"github.com/jeromedoucet/alienor-back/ctrl"
 	"log"
 	"flag"
+	"github.com/jeromedoucet/alienor-back/route"
 )
 
 var dataStoreAddr string = "127.0.0.1"
@@ -12,11 +13,9 @@ var dataStoreAddr string = "127.0.0.1"
 // todo make some properties external
 func main() {
 	httpAddr := flag.String("http", ":8080", "the address on which the http server will listen")
-	webRoot := flag.String("root", "./dist", "the repository from which the web client resources are served")
 	flag.Parse()
-	m := http.NewServeMux();
+	m := route.NewDynamicRouter()
 	ctrl.InitEndPoints(m, dataStoreAddr, "", "some secret") // todo generate secret
-	serveStaticFiles(*webRoot, m)
 	f := new(httpFilter)
 	f.mux = m
 	err := http.ListenAndServe(*httpAddr, f)
@@ -26,7 +25,7 @@ func main() {
 }
 
 type httpFilter struct {
-	mux *http.ServeMux
+	mux *route.DynamicRouter
 }
 
 // todo test me !

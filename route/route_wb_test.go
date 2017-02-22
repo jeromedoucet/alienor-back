@@ -281,7 +281,7 @@ func TestFindEndpointOnDynamicRoute(t *testing.T) {
 		called = true
 	}
 
-	req := http.Request{URL: &url.URL{Path: "/api/v1/item/:itemId"}}
+	req := http.Request{URL: &url.URL{Path: "/api/v1/item/12345"}}
 
 	r := NewDynamicRouter()
 
@@ -330,7 +330,7 @@ func BenchmarkFindEndpointOnDynamicRouteRoute(b *testing.B) {
 		r.root["api"].children["v1"] = &node{children: make(map[string]*node)}
 		r.root["api"].children["v1"].children["item"] = &node{children: make(map[string]*node)}
 		r.root["api"].children["v1"].children["item"].children[":itemId"] = &node{children: make(map[string]*node), handler: f}
-		req := http.Request{URL: &url.URL{Path: "/api/v1/item/:itemId"}}
+		req := http.Request{URL: &url.URL{Path: "/api/v1/item/12345"}}
 		for pb.Next() {
 			r.findEndpoint(&req)
 		}
