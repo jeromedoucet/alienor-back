@@ -25,7 +25,7 @@ func (r *DynamicRouter) HandleFunc(pattern string, handler func(http.ResponseWri
 	r.registerHandler(SplitPath(pattern), handler)
 }
 
-// todo perf tests
+// todo perf tests (gatling) + race condition tests
 func (r *DynamicRouter) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	// todo test me
 	n, err := r.findEndpoint(req)
@@ -103,6 +103,7 @@ func parseTree(children map[string]*node, path []string) (*node, error) {
 	n, ok := children[path[0]]
 	if !ok {
 		// if no static path found, look for a dynamic one
+		// todo make some optimization
 		for p, dn := range children {
 			if strings.HasPrefix(p, ":") {
 				n = dn

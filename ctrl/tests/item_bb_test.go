@@ -17,14 +17,14 @@ func TestCreateItemNominal(t *testing.T) {
 	illidan := test.PrepareUserWithTeam("A-Team", "illidan.stormrage")
 	test.Populate(map[string]interface{}{"user:" + illidan.Id: illidan})
 
-	s := test.StartHttp(func(r component.Router) {ctrl.InitEndPoints(r, test.CouchBaseAddr, "", test.Secret)})
+	s := test.StartHttp(func(r component.Router) { ctrl.InitEndPoints(r, test.CouchBaseAddr, "", test.Secret) })
 	defer s.Close()
 
 	newItem := ctrl.ItemCreationReq{Id: "#HelloWorld"}
-	body, _:= json.Marshal(newItem)
+	body, _ := json.Marshal(newItem)
 	token := test.CreateToken(illidan)
 	// when
-	res, err := test.DoReqWithToken(s.URL + "/team/"+ illidan.Roles[0].Team.Id + "/item", "POST", bytes.NewBuffer(body), token)
+	res, err := test.DoReqWithToken(s.URL+"/team/"+illidan.Roles[0].Team.Id+"/item", "POST", bytes.NewBuffer(body), token)
 
 	// then
 	if err != nil {
@@ -45,20 +45,20 @@ func TestCreateItemNominal(t *testing.T) {
 	}
 }
 
-func TestCreateItemWillFailedWhenNOtAuthenticated(t *testing.T) {
+func TestCreateItemWillFailedWhenNotAuthenticated(t *testing.T) {
 	// given
 	test.Before()
 	illidan := test.PrepareUserWithTeam("A-Team", "illidan.stormrage")
 	test.Populate(map[string]interface{}{"user:" + illidan.Id: illidan})
 
-	s := test.StartHttp(func(r component.Router) {ctrl.InitEndPoints(r, test.CouchBaseAddr, "", test.Secret)})
+	s := test.StartHttp(func(r component.Router) { ctrl.InitEndPoints(r, test.CouchBaseAddr, "", test.Secret) })
 	defer s.Close()
 
 	newItem := ctrl.ItemCreationReq{Id: "#HelloWorld"}
-	body, _:= json.Marshal(newItem)
+	body, _ := json.Marshal(newItem)
 
 	// when
-	res, err := test.DoReq(s.URL + "/team/"+ illidan.Roles[0].Team.Id + "/item", "POST", bytes.NewBuffer(body))
+	res, err := test.DoReq(s.URL+"/team/"+illidan.Roles[0].Team.Id+"/item", "POST", bytes.NewBuffer(body))
 
 	// then
 	if err != nil {
@@ -68,8 +68,64 @@ func TestCreateItemWillFailedWhenNOtAuthenticated(t *testing.T) {
 	}
 }
 
-// item id vide
-// pas de team id
+func TestCreateItemWillFailedWhenItemIdEmpty(t *testing.T) {
+	// given
+	test.Before()
+	illidan := test.PrepareUserWithTeam("A-Team", "illidan.stormrage")
+	test.Populate(map[string]interface{}{"user:" + illidan.Id: illidan})
+
+	s := test.StartHttp(func(r component.Router) { ctrl.InitEndPoints(r, test.CouchBaseAddr, "", test.Secret) })
+	defer s.Close()
+
+	newItem := ctrl.ItemCreationReq{}
+	body, _ := json.Marshal(newItem)
+	token := test.CreateToken(illidan)
+	// when
+	res, err := test.DoReqWithToken(s.URL+"/team/"+illidan.Roles[0].Team.Id+"/item", "POST", bytes.NewBuffer(body), token)
+
+	// then
+	if err != nil {
+		t.Fatal("expect err to be nil")
+	} else if res.StatusCode != 400 {
+		t.Fatal("expect http code to equals 400")
+	}
+	var errBody ctrl.ErrorBody
+	json.NewDecoder(res.Body).Decode(&errBody)
+	if errBody.Msg != "#MissingItemIdentifier" {
+		t.Fatal("wrong error msg")
+	}
+
+}
+
+func TestCreateItemWillFailedWhenItemIdFilledWithBlank(t *testing.T) {
+	// given
+	test.Before()
+	illidan := test.PrepareUserWithTeam("A-Team", "illidan.stormrage")
+	test.Populate(map[string]interface{}{"user:" + illidan.Id: illidan})
+
+	s := test.StartHttp(func(r component.Router) { ctrl.InitEndPoints(r, test.CouchBaseAddr, "", test.Secret) })
+	defer s.Close()
+
+	newItem := ctrl.ItemCreationReq{Id:"           		\n\r"}
+	body, _ := json.Marshal(newItem)
+	token := test.CreateToken(illidan)
+	// when
+	res, err := test.DoReqWithToken(s.URL+"/team/"+illidan.Roles[0].Team.Id+"/item", "POST", bytes.NewBuffer(body), token)
+
+	// then
+	if err != nil {
+		t.Fatal("expect err to be nil")
+	} else if res.StatusCode != 400 {
+		t.Fatal("expect http code to equals 400")
+	}
+	var errBody ctrl.ErrorBody
+	json.NewDecoder(res.Body).Decode(&errBody)
+	if errBody.Msg != "#MissingItemIdentifier" {
+		t.Fatal("wrong error msg")
+	}
+}
+
+// team id inexistant
 // json malforne
 // not belonging team
 // verification duplication cle par rapport a team

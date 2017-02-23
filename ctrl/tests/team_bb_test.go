@@ -68,7 +68,7 @@ func TestTeamCreationWitoutBodyRequest(t *testing.T) {
 	// then
 	if err != nil {
 		t.Error("expect error to be nil")
-	} else if res.StatusCode != 401 {
+	} else if res.StatusCode != 400 {
 		t.Error("expect status code to equals 401")
 	}
 

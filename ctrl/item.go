@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"github.com/jeromedoucet/alienor-back/model"
 	"github.com/jeromedoucet/alienor-back/route"
+	"strings"
 )
 
 type ItemCreationReq struct {
@@ -13,8 +14,12 @@ type ItemCreationReq struct {
 }
 
 func handleItem(w http.ResponseWriter, r *http.Request) {
-	var req ItemCreationReq;
+	var req ItemCreationReq
 	json.NewDecoder(r.Body).Decode(&req)
+	if strings.TrimSpace(req.Id) == "" {
+		writeError(w, &ctrlError{errorMsg:"#MissingItemIdentifier", httpCode:400})
+		return
+	}
 	item := model.NewItem()
 	item.Id = req.Id
 	item.TeamId = route.SplitPath(r.URL.Path)[1]

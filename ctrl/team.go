@@ -44,7 +44,7 @@ func createTeam(principal *model.User, w http.ResponseWriter, r *http.Request) {
 	var req TeamCreationReq
 	err := dec.Decode(&req)
 	if err != nil {
-		writeError(w, &ctrlError{errorMsg:"#BadRequestBody", httpCode:401})
+		writeError(w, &ctrlError{errorMsg:"#BadRequestBody", httpCode:400})
 		return
 	}
 
