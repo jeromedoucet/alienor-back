@@ -22,7 +22,7 @@ type AuthFilter struct {
 func (a *AuthFilter) HandleAuth(w http.ResponseWriter, r *http.Request)  {
 	_, err :=CheckToken(r)
 	if err != nil {
-		writeError(w, &ctrlError{httpCode:401, errorMsg:"Not authenticated"})
+		writeError(w, &ctrlError{httpCode:401, errorMsg:"#NotAuthenticated"})
 		return
 	} else {
 		a.HandleBusiness(w, r)
