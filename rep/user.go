@@ -7,23 +7,21 @@ import (
 	"errors"
 )
 
-
 type UserRepository struct {
-
 }
 
 func (UserRepository) Get(identifier string, document model.Document) (gocb.Cas, error) {
 	user, isUser := document.(*model.User)
-	if !isUser { // todo test that
-		return 0, errors.New("Cannot Get a non user entity !")
+	if !isUser {
+		return 0, errors.New("Cannot Get a non user entity")
 	}
-	return bucket.Get(string(model.USER) + ":" + identifier, user)
+	return bucket.Get(string(model.USER)+":"+identifier, user)
 }
 
 func (UserRepository) Insert(document model.Document) (err error) {
 	user, isUser := document.(*model.User)
 	if !isUser {
-		err = errors.New("Cannot Insert a non user entity !")
+		err = errors.New("Cannot Insert a non user entity")
 		return
 	}
 	if len(user.Password) == 0 {
@@ -32,7 +30,7 @@ func (UserRepository) Insert(document model.Document) (err error) {
 	}
 	cPwd, _ := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost) //todo handle error
 	user.Password = string(cPwd)
-	_, err = bucket.Insert(string(model.USER) + ":" + user.Id, user, 0)
+	_, err = bucket.Insert(string(model.USER)+":"+user.Id, user, 0)
 	return
 }
 
@@ -44,6 +42,6 @@ func (UserRepository) Update(document model.Document, cas gocb.Cas) (err error) 
 		return
 	}
 	// todo check if possible to update partially the document instead
-	_, err = bucket.Replace(string(model.USER) + ":" + user.Id, user, cas, 0)
+	_, err = bucket.Replace(string(model.USER)+":"+user.Id, user, cas, 0)
 	return
 }

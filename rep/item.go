@@ -7,24 +7,36 @@ import (
 )
 
 type ItemRepository struct {
-
 }
 
-func (ItemRepository) Get(identifier string, document model.Document) (gocb.Cas, error) {
-	return 0, nil
-}
-
-func (ItemRepository) Insert(document model.Document) (err error) {
+func (ItemRepository) Get(parentId, identifier string, document model.Document) (gocb.Cas, error) {
 	item, isItem := document.(*model.Item)
 	if !isItem {
-		err = errors.New("Cannot Insert a non user entity !")
+		return 0, errors.New("Cannot Get a non item entity")
+	}
+
+	return bucket.Get(string(model.ITEM)+":"+parentId+":"+identifier, item)
+}
+
+func (ItemRepository) Insert(parentId string, document model.Document) (err error) {
+	item, isItem := document.(*model.Item)
+	if !isItem {
+		err = errors.New("can only insert item")
+		return
+	} else if item.Type == "" {
+		err = errors.New("missing type in item")
+		return
+	} else if item.Id == "" {
+		err = errors.New("missing id in item")
+		return
+	} else if item.State != model.Newly { //todo is it really a desired behavior ?
+		err = errors.New("bad item status")
 		return
 	}
-	// todo check mandatory field
-	_, err = bucket.Insert(string(model.ITEM) + ":" + item.TeamId + ":" + item.Id, item, 0)
+	_, err = bucket.Insert(string(model.ITEM)+":"+parentId+":"+item.Id, item, 0)
 	return
 }
 
-func (ItemRepository) Update(document model.Document, cas gocb.Cas) error {
+func (ItemRepository) Update(parentId string, document model.Document, cas gocb.Cas) error {
 	return nil
 }

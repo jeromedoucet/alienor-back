@@ -12,12 +12,20 @@ var (
 	bucket *gocb.Bucket
 )
 
-// A repository provide some basic operations
-// on data into data store
-type Repository interface {
-	Get(identifier string, document model.Document) (gocb.Cas, error)
-	Insert(document model.Document) error
-	Update(document model.Document, cas gocb.Cas) error
+// A repository that fit for operation on root Documents :
+// no need to provide another identifier than the document one: it is unique
+type RootEntityRepository interface {
+	Get(id string, doc model.Document) (gocb.Cas, error)
+	Insert(doc model.Document) error
+	Update(doc model.Document, cas gocb.Cas) error
+}
+
+// A repository that fit for operation on child Documents, stored
+// a complex identifier
+type ChildEntityRepository interface {
+	Get(parentId, id string, doc model.Document) (gocb.Cas, error)
+	Insert(parentId string, doc model.Document) error
+	Update(parentId string, doc model.Document, cas gocb.Cas) error
 }
 
 // todo close the bucket on exit

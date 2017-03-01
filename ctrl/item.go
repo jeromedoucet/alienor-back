@@ -38,15 +38,22 @@ func handleItem(w http.ResponseWriter, r *http.Request) {
 		writeError(w, &ctrlError{errorMsg: "#UnknownUser", httpCode: 404})
 		return
 	}
+	teamId := route.SplitPath(r.URL.Path)[1]
 	item := model.NewItem()
+	// we use the ame instance to check if an item already exist and if not to create
+	// the new item
+	_, err = itemRepository.Get(teamId, req.Id, item)
+	if err == nil {
+		writeError(w, &ctrlError{errorMsg: "#ExistingItem", httpCode: 409})
+		return
+	}
 	item.Id = req.Id
-	item.TeamId = route.SplitPath(r.URL.Path)[1]
-	err = checkTeamExistence(usr, item.TeamId)
+	err = checkTeamExistence(usr, teamId)
 	if err != nil {
 		writeError(w, &ctrlError{errorMsg: err.Error(), httpCode: 404})
 		return
 	}
-	itemRepository.Insert(item)
+	itemRepository.Insert(teamId, item)
 	w.WriteHeader(201)
 }
 

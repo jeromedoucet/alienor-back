@@ -41,8 +41,6 @@ func TestCreateItemNominal(t *testing.T) {
 		t.Fatal("expect item type to be item")
 	} else if savedItem.State != model.Newly {
 		t.Fatal("expect item state to be new")
-	} else if savedItem.TeamId != illidan.Roles[0].Team.Id {
-		t.Fatal("bad team id")
 	}
 }
 
@@ -207,6 +205,38 @@ func TestCreateItemWillFailedWhenUsrNotFound(t *testing.T) {
 	var errBody ctrl.ErrorBody
 	json.NewDecoder(res.Body).Decode(&errBody)
 	if errBody.Msg != "#UnknownUser" {
+		t.Fatal("wrong error msg")
+	}
+}
+
+func TestCreateShouldFailedWhenItemAlreadyExist(t *testing.T) {
+	// given
+	test.Before()
+	itemId := "#HelloWorld"
+	illidan := test.PrepareUserWithTeam("A-Team", "illidan.stormrage")
+	existingItem := model.NewItem()
+	existingItem.Id = itemId
+	test.Populate(map[string]interface{}{"user:" + illidan.Id: illidan, "item:" + illidan.Roles[0].Team.Id + ":" + itemId: existingItem})
+
+	s := test.StartHttp(func(r component.Router) { ctrl.InitEndPoints(r, test.CouchBaseAddr, "", test.Secret) })
+	defer s.Close()
+
+	newItem := ctrl.ItemCreationReq{Id: itemId}
+	body, _ := json.Marshal(newItem)
+	token := test.CreateToken(illidan)
+	// when
+	res, err := test.DoReqWithToken(s.URL+"/team/"+illidan.Roles[0].Team.Id+"/item", "POST", bytes.NewBuffer(body), token)
+
+	// then
+	if err != nil {
+		t.Fatal("expect error to be nil")
+	} else if res.StatusCode != 409 {
+		t.Fatal("expect status code to equals 409")
+	}
+
+	var errBody ctrl.ErrorBody
+	json.NewDecoder(res.Body).Decode(&errBody)
+	if errBody.Msg != "#ExistingItem" {
 		t.Fatal("wrong error msg")
 	}
 }

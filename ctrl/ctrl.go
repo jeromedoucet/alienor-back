@@ -9,8 +9,8 @@ import (
 )
 
 var (
-	userRepository rep.Repository = new(rep.UserRepository)
-	itemRepository rep.Repository = new(rep.ItemRepository)
+	userRepository rep.RootEntityRepository = new(rep.UserRepository)
+	itemRepository rep.ChildEntityRepository = new(rep.ItemRepository)
 )
 
 // filter used to check authentication
