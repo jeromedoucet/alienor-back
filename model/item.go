@@ -12,6 +12,7 @@ type Item struct {
 	Type     DocType `json:"type"`
 	State ItemState `json:"state"`
 	Values map [string]string `json:"values"`
+	Version uint64 `json:"version"`
 }
 
 func NewItem() *Item {

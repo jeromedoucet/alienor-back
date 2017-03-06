@@ -26,6 +26,7 @@ type ChildEntityRepository interface {
 	Get(parentId, id string, doc model.Document) (gocb.Cas, error)
 	Insert(parentId string, doc model.Document) error
 	Update(parentId string, doc model.Document, cas gocb.Cas) error
+	Delete(parentId, id string, doc model.Document) error
 }
 
 // todo close the bucket on exit

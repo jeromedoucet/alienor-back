@@ -1,21 +1,21 @@
 package rep_test
 
 import (
-	"testing"
-	"github.com/jeromedoucet/alienor-back/test"
 	"github.com/jeromedoucet/alienor-back/model"
 	"github.com/jeromedoucet/alienor-back/rep"
+	"github.com/jeromedoucet/alienor-back/test"
+	"testing"
 )
 
 func TestGetUserShouldUserWithSuccess(t *testing.T) {
 	// given
 	test.Before()
-	usr := model.User{Id:"leroy.jenkins",
-		Type:model.USER,
-		ForName:"Leroy",
-		Name:"Jenkins",
-		Email:"leroy.jenkins@wipe-guild.org",
-		Password:"wipe",
+	usr := model.User{Id: "leroy.jenkins",
+		Type:     model.USER,
+		ForName:  "Leroy",
+		Name:     "Jenkins",
+		Email:    "leroy.jenkins@wipe-guild.org",
+		Password: "wipe",
 	}
 	test.Populate(map[string]interface{}{"user:" + usr.Id: usr})
 	rep.InitRepo(test.CouchBaseAddr, "")
@@ -27,7 +27,7 @@ func TestGetUserShouldUserWithSuccess(t *testing.T) {
 	// then
 	if err != nil {
 		t.Error("expect error to be nil")
-	} else if actualUser.Email != usr.Email  {
+	} else if actualUser.Email != usr.Email {
 		t.Error("expect users email to be equals")
 	} else if actualUser.ForName != usr.ForName {
 		t.Error("expect users ForName to be equals")
@@ -65,7 +65,7 @@ func TestInsertANonUserEntity(t *testing.T) {
 	// then
 	if err == nil {
 		t.Error("expect error not to be nil")
-	} else if err.Error() != "Cannot Insert a non user entity !" {
+	} else if err.Error() != "Cannot Insert a non user entity" {
 		t.Error("bad error message")
 	}
 }
@@ -75,11 +75,11 @@ func TestInsertUserWithoutPwd(t *testing.T) {
 	test.Before()
 	rep.InitRepo(test.CouchBaseAddr, "")
 	userRepository := new(rep.UserRepository)
-	usr := &model.User{Id:"leroy.jenkins",
-		Type:model.USER,
-		ForName:"Leroy",
-		Name:"Jenkins",
-		Email:"leroy.jenkins@wipe-guild.org",
+	usr := &model.User{Id: "leroy.jenkins",
+		Type:    model.USER,
+		ForName: "Leroy",
+		Name:    "Jenkins",
+		Email:   "leroy.jenkins@wipe-guild.org",
 	}
 
 	// when

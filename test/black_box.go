@@ -87,16 +87,27 @@ func GetUser(identifier string) (*model.User) {
 	return usr
 }
 
-// get one User
-func GetItem(itemId, teamId string) (*model.Item) {
-	Bucket, _ := Cluster.OpenBucket("alienor", "")
-	defer Bucket.Close()
+// get one User. Panic if an error occure
+func GetExistingItem(teamId, itemId string) (*model.Item, gocb.Cas) {
 	item := model.NewItem()
-	_, err := Bucket.Get(string(model.ITEM) + ":" + teamId + ":" + itemId, item)
+	cas, err := doGetItem(teamId, itemId, item)
 	if err != nil {
 		panic(err)
 	}
-	return item
+	return item, cas
+}
+
+func GetItem(teamId, itemId string) (*model.Item, error) {
+	item := model.NewItem()
+	cas, err := doGetItem(teamId, itemId, item)
+	item.Version = uint64(cas)
+	return item, err
+}
+
+func doGetItem(teamId, itemId string, item *model.Item) (gocb.Cas, error) {
+	Bucket, _ := Cluster.OpenBucket("alienor", "")
+	defer Bucket.Close()
+	return Bucket.Get(string(model.ITEM) + ":" + teamId + ":" + itemId, item)
 }
 
 func CreateToken(usr *model.User) (token string) {

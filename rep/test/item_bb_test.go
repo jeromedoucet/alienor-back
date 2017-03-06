@@ -1,10 +1,10 @@
 package rep
 
 import (
-	"testing"
 	"github.com/jeromedoucet/alienor-back/model"
 	"github.com/jeromedoucet/alienor-back/rep"
 	"github.com/jeromedoucet/alienor-back/test"
+	"testing"
 )
 
 func TestInsertItemSuccessFully(t *testing.T) {
@@ -23,13 +23,15 @@ func TestInsertItemSuccessFully(t *testing.T) {
 	if err != nil {
 		t.Fatal("expect err to be nil")
 	}
-	savedItem := test.GetItem(item.Id, teamId)
+	savedItem, cas := test.GetExistingItem(teamId, item.Id)
 	if savedItem.Id != item.Id {
 		t.Fatal("expect id to be equals")
 	} else if savedItem.Type != model.ITEM {
 		t.Fatal("expect type to be ITEM")
 	} else if savedItem.State != model.Newly {
 		t.Fatal("expect state to be Newly")
+	} else if uint64(cas) != item.Version {
+		t.Fatal("expect the versions to be equals.")
 	}
 }
 
@@ -118,11 +120,12 @@ func TestGetItemSuccessFully(t *testing.T) {
 	existingItem := model.NewItem()
 	existingItem.Id = itemId
 	test.Populate(map[string]interface{}{"item:" + teamId + ":" + itemId: existingItem})
+	rep.InitRepo(test.CouchBaseAddr, "")
 	itemRepository := new(rep.ItemRepository)
 	newItem := &model.Item{}
 
 	// when
-	_, err := itemRepository.Get(teamId, itemId, newItem)
+	cas, err := itemRepository.Get(teamId, itemId, newItem)
 
 	// then
 	if err != nil {
@@ -133,6 +136,8 @@ func TestGetItemSuccessFully(t *testing.T) {
 		t.Fatal("state expected to be the same")
 	} else if newItem.Type != model.ITEM {
 		t.Fatal("type expected to be ITEM")
+	} else if newItem.Version != uint64(cas) {
+		t.Fatalf("expect version to be equals be was %d for item and %d for cas", newItem.Version, uint64(cas))
 	}
 }
 
@@ -144,6 +149,7 @@ func TestGetItemShouldFailWhenDocumentIsNotAnItem(t *testing.T) {
 	existingItem := model.NewItem()
 	existingItem.Id = itemId
 	test.Populate(map[string]interface{}{"item:" + teamId + ":" + itemId: existingItem})
+	rep.InitRepo(test.CouchBaseAddr, "")
 	itemRepository := new(rep.ItemRepository)
 	newItem := &model.User{}
 
@@ -155,5 +161,52 @@ func TestGetItemShouldFailWhenDocumentIsNotAnItem(t *testing.T) {
 		t.Fatal("expect error not to be nil")
 	} else if err.Error() != "Cannot Get a non item entity" {
 		t.Fatalf("bad error message : %s", err.Error())
+	}
+}
+
+func TestDeleteItemShouldSuccess(t *testing.T) {
+	test.Before()
+	itemId := "#HelloWorld"
+	teamId := "team-id"
+	existingItem := model.NewItem()
+	existingItem.Id = itemId
+	test.Populate(map[string]interface{}{"item:" + teamId + ":" + itemId: existingItem})
+	rep.InitRepo(test.CouchBaseAddr, "")
+	itemRepository := new(rep.ItemRepository)
+	itemToDelete, cas := test.GetExistingItem(teamId, itemId)
+	itemToDelete.Version = uint64(cas)
+
+	// when
+	err := itemRepository.Delete(teamId, itemId, itemToDelete)
+
+	// then
+	if err != nil {
+		t.Fatalf("expect error to be nil but was %s", err.Error())
+	}
+	_, err = test.GetItem(teamId, itemId)
+	if err == nil {
+		t.Fatal("expect item to be deleted")
+	}
+}
+
+func TestDeleteItemShouldFailWhenDocumentNotAnItem(t *testing.T) {
+	test.Before()
+	itemId := "#HelloWorld"
+	teamId := "team-id"
+	existingItem := model.NewItem()
+	existingItem.Id = itemId
+	test.Populate(map[string]interface{}{"item:" + teamId + ":" + itemId: existingItem})
+	rep.InitRepo(test.CouchBaseAddr, "")
+	itemRepository := new(rep.ItemRepository)
+	itemToDelete := model.NewUser()
+
+	// when
+	err := itemRepository.Delete(teamId, itemId, itemToDelete)
+
+	// then
+	if err == nil {
+		t.Fatal("expect error not to be nil")
+	} else if err.Error() != "Cannot delete a non item entity" {
+		t.Fatal("wrong error type")
 	}
 }

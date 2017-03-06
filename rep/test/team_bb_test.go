@@ -31,7 +31,7 @@ func TestTeamExistWhenDoesNotTeamExist(t *testing.T) {
 	rep.InitRepo(test.CouchBaseAddr, "")
 
 	// when
-	exist, err := rep.TeamExist("A-Team", gocb.RequestPlus)
+	exist, err := rep.TeamExist("I-Team", gocb.RequestPlus)
 
 	// then
 	if err != nil {
