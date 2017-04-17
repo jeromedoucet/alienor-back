@@ -1,10 +1,10 @@
 package rep
 
 import (
+	"testing"
 	"github.com/jeromedoucet/alienor-back/model"
 	"github.com/jeromedoucet/alienor-back/rep"
 	"github.com/jeromedoucet/alienor-back/test"
-	"testing"
 )
 
 func TestInsertItemSuccessFully(t *testing.T) {
@@ -186,6 +186,27 @@ func TestDeleteItemShouldSuccess(t *testing.T) {
 	_, err = test.GetItem(teamId, itemId)
 	if err == nil {
 		t.Fatal("expect item to be deleted")
+	}
+}
+
+func TestDeleteItemShouldFailedWhenBadCas(t *testing.T) {
+	test.Before()
+	itemId := "#HelloWorld"
+	teamId := "team-id"
+	existingItem := model.NewItem()
+	existingItem.Id = itemId
+	test.Populate(map[string]interface{}{"item:" + teamId + ":" + itemId: existingItem})
+	rep.InitRepo(test.CouchBaseAddr, "")
+	itemRepository := new(rep.ItemRepository)
+	itemToDelete, cas := test.GetExistingItem(teamId, itemId)
+	itemToDelete.Version = uint64(cas) - 1
+
+	// when
+	err := itemRepository.Delete(teamId, itemId, itemToDelete)
+
+	// then
+	if err == nil {
+		t.Fatal("expect error not to be nil but was nil")
 	}
 }
 

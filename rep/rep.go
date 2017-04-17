@@ -12,6 +12,13 @@ var (
 	bucket *gocb.Bucket
 )
 
+type DataSourceError interface {
+	KeyNotFound() bool
+	KeyExists() bool
+}
+
+// todo interface for repositories are maybe not useful. Should we remove them ?
+
 // A repository that fit for operation on root Documents :
 // no need to provide another identifier than the document one: it is unique
 type RootEntityRepository interface {
