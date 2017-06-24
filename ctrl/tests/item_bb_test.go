@@ -661,6 +661,5 @@ func TestGetItemShouldFailWhenUnknownItem(t *testing.T) {
 
 // todo list item avec pagination
 // todo maj item
-// todo suppr item
 
 // verification duplication cle par rapport a team
